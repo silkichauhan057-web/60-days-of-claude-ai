@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Learning Studio — Linear &amp; Polynomial Regression</title>
+<style>
+:root{
+  --bg:#0B0F1A;
+  --surface:#131826;
+  --surface2:#1B2333;
+  --surface3:#212B40;
+  --accent:#3ED6B5;
+  --accent-dim:#1F5F52;
+  --accent2:#FF6F59;
+  --accent2-dim:#7A362C;
+  --text:#E7EAF0;
+  --muted:#8892A6;
+  --grid:#232B3D;
+  --success:#3ED6B5;
+  --danger:#FF6F59;
+  --radius:14px;
+  --serif: Georgia, 'Times New Roman', serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+:root.light{
+  --bg:#F3F5F8;
+  --surface:#FFFFFF;
+  --surface2:#EEF1F6;
+  --surface3:#E3E8F0;
+  --text:#131826;
+  --muted:#5B6478;
+  --grid:#DCE1EA;
+  --accent-dim:#CFF4EA;
+  --accent2-dim:#FFE0DA;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  transition:background .3s ease, color .3s ease;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:32px 32px;
+  opacity:.35;
+  pointer-events:none;
+  z-index:0;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+}
+
+/* ===== Top bar ===== */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; gap:16px;
+  padding:12px 20px;
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--grid);
+}
+.brand{
+  display:flex; align-items:center; gap:10px;
+  font-family:var(--mono); font-weight:700; letter-spacing:.5px;
+  white-space:nowrap;
+}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+.brand small{display:block; font-family:var(--sans); font-weight:400; color:var(--muted); font-size:11px; letter-spacing:.3px;}
+.topbar .progress-wrap{flex:1; display:flex; align-items:center; gap:10px;}
+.progress-track{
+  flex:1; height:8px; border-radius:6px; background:var(--surface2); overflow:hidden;
+  border:1px solid var(--grid);
+}
+.progress-fill{
+  height:100%; width:0%; border-radius:6px;
+  background:linear-gradient(90deg, var(--accent), #7CF2D8);
+  transition:width .5s cubic-bezier(.4,0,.2,1);
+}
+.progress-label{font-family:var(--mono); font-size:12px; color:var(--muted); white-space:nowrap;}
+.xp-badge{
+  font-family:var(--mono); font-size:12px; padding:6px 10px; border-radius:20px;
+  background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent);
+  white-space:nowrap;
+}
+.icon-btn{
+  background:var(--surface2); border:1px solid var(--grid); color:var(--text);
+  width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .15s ease, background .15s ease;
+}
+.icon-btn:hover{background:var(--surface3); transform:translateY(-1px);}
+.icon-btn:active{transform:translateY(0);}
+
+/* ===== Layout ===== */
+.layout{
+  position:relative; z-index:1;
+  display:grid; grid-template-columns:260px 1fr; gap:0;
+  min-height:calc(100vh - 61px);
+}
+.sidebar{
+  border-right:1px solid var(--grid);
+  padding:20px 14px;
+  position:sticky; top:61px; align-self:start;
+  height:calc(100vh - 61px); overflow-y:auto;
+}
+.nav-group-label{
+  font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:1px;
+  color:var(--muted); margin:18px 8px 8px;
+}
+.nav-item{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px; cursor:pointer;
+  color:var(--muted); font-size:14px; margin-bottom:2px;
+  border:1px solid transparent;
+  transition:all .15s ease;
+}
+.nav-item .num{
+  font-family:var(--mono); font-size:11px; width:22px; height:22px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--surface2); color:var(--muted); flex-shrink:0;
+}
+.nav-item.active{background:var(--surface2); color:var(--text); border-color:var(--grid);}
+.nav-item.active .num{background:var(--accent); color:#04140F;}
+.nav-item.done .num{background:var(--accent-dim); color:var(--accent);}
+.nav-item.done .num::after{content:"✓";}
+.nav-item.locked{opacity:.4; cursor:not-allowed;}
+.nav-item:hover:not(.locked){color:var(--text);}
+
+main{padding:28px 32px 90px; max-width:920px; margin:0 auto; width:100%;}
+.section{display:none; animation:fadeIn .4s ease;}
+.section.active{display:block;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+
+/* ===== Typography ===== */
+h1{font-family:var(--serif); font-size:2.4rem; line-height:1.15; margin:.2em 0 .3em; letter-spacing:-.5px;}
+h2{font-family:var(--serif); font-size:1.7rem; margin:1.4em 0 .5em; letter-spacing:-.3px;}
+h3{font-family:var(--sans); font-size:1.15rem; margin:1.3em 0 .5em; color:var(--text);}
+h4{font-family:var(--mono); font-size:.85rem; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin:1.4em 0 .6em;}
+p{line-height:1.7; color:var(--text); opacity:.92;}
+.lede{font-size:1.1rem; color:var(--muted); line-height:1.7;}
+.eyebrow{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:2px; color:var(--accent);}
+code, .formula{font-family:var(--mono); background:var(--surface2); padding:2px 7px; border-radius:6px; font-size:.92em; color:var(--accent);}
+.formula-block{
+  font-family:var(--mono); background:var(--surface2); border:1px solid var(--grid); border-left:3px solid var(--accent);
+  padding:16px 20px; border-radius:10px; margin:16px 0; font-size:1rem; overflow-x:auto;
+}
+
+/* ===== Cards ===== */
+.card{
+  background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius);
+  padding:22px 24px; margin:18px 0;
+}
+.card-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:760px){.card-grid{grid-template-columns:1fr;} .layout{grid-template-columns:1fr;} .sidebar{display:none;}}
+.analogy{
+  background:linear-gradient(135deg, var(--accent-dim), transparent);
+  border:1px solid var(--accent-dim); border-left:3px solid var(--accent);
+  border-radius:var(--radius); padding:18px 22px; margin:18px 0;
+}
+.analogy .eyebrow{color:var(--accent);}
+.misconception{
+  background:linear-gradient(135deg, var(--accent2-dim), transparent);
+  border:1px solid var(--accent2-dim); border-left:3px solid var(--accent2);
+  border-radius:var(--radius); padding:18px 22px; margin:18px 0;
+}
+.misconception .eyebrow{color:var(--accent2);}
+.takeaways{
+  background:var(--surface2); border:1px solid var(--grid); border-radius:var(--radius);
+  padding:18px 22px; margin:18px 0;
+}
+.takeaways ul{margin:8px 0 0; padding-left:20px;}
+.takeaways li{margin-bottom:6px; line-height:1.6;}
+.compare-table{width:100%; border-collapse:collapse; margin:14px 0; font-size:.92rem;}
+.compare-table th, .compare-table td{padding:10px 12px; border-bottom:1px solid var(--grid); text-align:left;}
+.compare-table th{font-family:var(--mono); font-size:11px; text-transform:uppercase; color:var(--muted); letter-spacing:.5px;}
+.compare-table td strong{color:var(--accent);}
+
+/* ===== Buttons ===== */
+.btn{
+  font-family:var(--sans); font-weight:600; font-size:14px;
+  padding:11px 20px; border-radius:10px; border:1px solid var(--grid);
+  background:var(--surface2); color:var(--text); cursor:pointer;
+  transition:all .15s ease; display:inline-flex; align-items:center; gap:8px;
+}
+.btn:hover{transform:translateY(-1px); background:var(--surface3);}
+.btn-primary{background:var(--accent); color:#04140F; border-color:var(--accent); font-weight:700;}
+.btn-primary:hover{background:#5CE8CC;}
+.btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+.btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+
+/* ===== Widgets ===== */
+.widget{
+  background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius);
+  padding:20px; margin:20px 0;
+}
+.widget-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
+.widget-title{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--muted);}
+.control-row{display:flex; align-items:center; gap:12px; margin:10px 0; flex-wrap:wrap;}
+.control-row label{font-size:13px; color:var(--muted); min-width:130px; font-family:var(--mono);}
+input[type=range]{
+  flex:1; min-width:140px; accent-color:var(--accent); height:6px; cursor:pointer;
+}
+.readout{font-family:var(--mono); font-size:13px; background:var(--surface2); padding:5px 10px; border-radius:6px; color:var(--accent); min-width:60px; text-align:center;}
+svg{display:block; width:100%; height:auto; background:var(--surface2); border-radius:10px;}
+.metric-row{display:flex; gap:12px; flex-wrap:wrap; margin-top:14px;}
+.metric{
+  flex:1; min-width:110px; background:var(--surface2); border:1px solid var(--grid); border-radius:10px; padding:12px 14px;
+}
+.metric .val{font-family:var(--mono); font-size:1.4rem; font-weight:700; color:var(--accent);}
+.metric .lbl{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;}
+
+/* ===== Quiz ===== */
+.quiz-card{border:1px solid var(--grid); border-radius:var(--radius); padding:22px 24px; margin:16px 0; background:var(--surface);}
+.quiz-q{font-weight:600; margin-bottom:12px; font-size:1.02rem;}
+.quiz-opts{display:flex; flex-direction:column; gap:8px;}
+.quiz-opt{
+  padding:12px 14px; border-radius:10px; border:1px solid var(--grid); background:var(--surface2);
+  cursor:pointer; font-size:14px; transition:all .15s ease; display:flex; align-items:center; gap:10px;
+}
+.quiz-opt:hover{border-color:var(--accent);}
+.quiz-opt.selected{border-color:var(--accent); background:var(--accent-dim);}
+.quiz-opt.correct{border-color:var(--success); background:var(--accent-dim); color:var(--success);}
+.quiz-opt.incorrect{border-color:var(--danger); background:var(--accent2-dim); color:var(--danger);}
+.quiz-opt .letter{
+  font-family:var(--mono); width:22px; height:22px; border-radius:6px; background:var(--surface3);
+  display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;
+}
+.quiz-explain{
+  margin-top:12px; padding:12px 14px; border-radius:10px; background:var(--surface2);
+  font-size:13.5px; color:var(--muted); display:none; border-left:3px solid var(--accent);
+}
+.quiz-explain.show{display:block;}
+.quiz-summary{
+  text-align:center; padding:30px 20px; border-radius:var(--radius);
+  background:var(--surface); border:1px solid var(--grid); margin-top:20px;
+}
+.quiz-summary .score{font-family:var(--mono); font-size:3rem; font-weight:700; color:var(--accent);}
+
+/* ===== Intro ===== */
+.hero-badge{
+  display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px;
+  background:var(--surface2); border:1px solid var(--grid); font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:10px;
+}
+.stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:20px 0;}
+@media (max-width:700px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-box{background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:16px; text-align:center;}
+.stat-box .n{font-family:var(--mono); font-size:1.5rem; color:var(--accent); font-weight:700;}
+.stat-box .l{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:4px;}
+.obj-list{list-style:none; padding:0; margin:10px 0;}
+.obj-list li{display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--grid); line-height:1.5;}
+.obj-list li::before{content:"→"; color:var(--accent); font-family:var(--mono); flex-shrink:0;}
+
+/* ===== Reward strip ===== */
+.reward-strip{display:flex; gap:12px; flex-wrap:wrap; margin:16px 0;}
+.badge-slot{
+  flex:1; min-width:140px; border:1px dashed var(--grid); border-radius:12px; padding:14px; text-align:center;
+  background:var(--surface2);
+}
+.badge-slot.earned{border-style:solid; border-color:var(--accent); background:var(--accent-dim);}
+.badge-slot .ic{font-size:1.6rem;}
+.badge-slot .nm{font-size:11px; font-family:var(--mono); color:var(--muted); margin-top:4px;}
+.badge-slot.earned .nm{color:var(--accent);}
+
+/* ===== Footer nav within section ===== */
+.section-footer{display:flex; justify-content:space-between; align-items:center; margin-top:36px; padding-top:20px; border-top:1px solid var(--grid);}
+
+/* ===== Resource lists ===== */
+.res-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:700px){.res-grid{grid-template-columns:1fr;}}
+.res-list{list-style:none; padding:0; margin:0;}
+.res-list li{padding:9px 0; border-bottom:1px solid var(--grid); font-size:13.5px; line-height:1.5;}
+.res-list li:last-child{border-bottom:none;}
+.res-list .t{font-weight:600; display:block;}
+.res-list .d{color:var(--muted); font-size:12.5px;}
+.kw-chip{display:inline-block; font-family:var(--mono); font-size:12px; background:var(--surface2); border:1px solid var(--grid); padding:5px 10px; border-radius:16px; margin:4px 4px 0 0; color:var(--accent);}
+.prompt-box{background:var(--surface2); border:1px solid var(--grid); border-left:3px solid var(--accent); border-radius:10px; padding:12px 14px; margin:8px 0; font-family:var(--mono); font-size:12.5px; color:var(--text); position:relative;}
+
+/* Print */
+@media print{
+  .topbar, .sidebar, .btn-row, .icon-btn, .section-footer{display:none !important;}
+  .section{display:block !important;}
+  body::before{display:none;}
+  .layout{display:block;}
+  main{max-width:100%;}
+}
+::-webkit-scrollbar{width:10px; height:10px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--surface3); border-radius:6px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="dot"></span>Interactive Learning Studio<small>Linear &amp; Polynomial Regression</small></div>
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0% complete</div>
+  </div>
+  <div class="xp-badge" id="xpBadge">★ 0 XP</div>
+  <button class="icon-btn" id="printBtn" title="Print / Save notes">⎙</button>
+  <button class="icon-btn" id="themeBtn" title="Toggle theme">◐</button>
+</div>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+/* =========================================================
+   DATA — content is hard-generated for Linear & Polynomial
+   Regression. Nothing here is fetched from a topic prompt.
+   ========================================================= */
+
+const state = {
+  xp: 0,
+  unlocked: [true, false, false, false, false], // intro implicit, modules 0-3, final
+  quizScores: [null, null, null, null],
+  quizAnswers: [[null,null,null,null],[null,null,null,null],[null,null,null,null],[null,null,null,null]],
+  quizSubmitted: [false,false,false,false],
+  finalDone: false,
+  current: 'intro'
+};
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem('ils-regression-state');
+    if(raw){ Object.assign(state, JSON.parse(raw)); }
+  }catch(e){}
+}
+function saveState(){
+  try{ localStorage.setItem('ils-regression-state', JSON.stringify(state)); }catch(e){}
+}
+
+/* ---------- Small math helpers for live regression widgets ---------- */
+function mean(a){ return a.reduce((s,v)=>s+v,0)/a.length; }
+function mse(ys, preds){ let s=0; for(let i=0;i<ys.length;i++){ s += (ys[i]-preds[i])**2; } return s/ys.length; }
+function rmse(ys,preds){ return Math.sqrt(mse(ys,preds)); }
+function r2(ys, preds){
+  const m = mean(ys);
+  let ssRes=0, ssTot=0;
+  for(let i=0;i<ys.length;i++){ ssRes += (ys[i]-preds[i])**2; ssTot += (ys[i]-m)**2; }
+  return 1 - ssRes/ssTot;
+}
+function transpose(A){ return A[0].map((_,c)=>A.map(r=>r[c])); }
+function matMul(A,B){
+  const res = Array.from({length:A.length},()=>Array(B[0].length).fill(0));
+  for(let i=0;i<A.length;i++) for(let j=0;j<B[0].length;j++){
+    let s=0; for(let k=0;k<B.length;k++) s += A[i][k]*B[k][j];
+    res[i][j]=s;
+  }
+  return res;
+}
+function solveLinear(A, b){ // Gaussian elimination, A n x n, b n x 1
+  const n = A.length;
+  const M = A.map((row,i)=>[...row, b[i][0]]);
+  for(let col=0; col<n; col++){
+    let piv = col;
+    for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>Math.abs(M[piv][col])) piv=r;
+    [M[col],M[piv]] = [M[piv],M[col]];
+    if(Math.abs(M[col][col]) < 1e-9) M[col][col] = 1e-9;
+    for(let r=0;r<n;r++){
+      if(r===col) continue;
+      const factor = M[r][col]/M[col][col];
+      for(let c=col;c<=n;c++) M[r][c] -= factor*M[col][c];
+    }
+  }
+  return M.map((row,i)=>[row[n]/row[i]]);
+}
+function polyFit(xs, ys, degree){
+  const X = xs.map(x=>{ const row=[]; for(let d=0; d<=degree; d++) row.push(Math.pow(x,d)); return row; });
+  const Y = ys.map(y=>[y]);
+  const Xt = transpose(X);
+  const XtX = matMul(Xt, X);
+  const XtY = matMul(Xt, Y);
+  const beta = solveLinear(XtX, XtY).map(r=>r[0]);
+  return beta; // coefficients low->high degree
+}
+function polyPredict(beta, x){ let s=0; for(let d=0; d<beta.length; d++) s += beta[d]*Math.pow(x,d); return s; }
+
+/* ---------- Fixed datasets used throughout ---------- */
+const DATA_LINEAR = {
+  xs:[1,2,3,3.5,4,5,6,6.5,7,8,9,10],
+  ys:[55,58,66,64,70,74,79,83,85,90,93,97],
+  xLabel:"Hours studied", yLabel:"Exam score"
+};
+const DATA_POLY = {
+  xs:[-3,-2.5,-2,-1.5,-1,-0.5,0,0.5,1,1.5,2,2.5,3],
+  ys:[9.4,7.0,5.1,3.0,2.4,1.1,1.3,0.9,1.8,2.6,3.3,5.6,7.0],
+  xLabel:"Sensor reading (centered)", yLabel:"Signal strength"
+};
+const DATA_SPLIT = {
+  trainX:[-3,-2,-1,0,1,2,3],
+  trainY:[9.4,5.1,2.4,1.3,1.8,3.3,7.0],
+  testX:[-2.5,-1.5,-0.5,0.5,1.5,2.5],
+  testY:[7.0,3.0,1.1,0.9,2.6,5.6]
+};
+
+/* =========================================================
+   SVG PLOT HELPERS
+   ========================================================= */
+function svgScatterLine(opts){
+  const {xs, ys, w=640, h=320, pad=40, line, extraLines=[], xLabel="", yLabel="", pointColor="var(--accent2)", points2=null} = opts;
+  const xMin = Math.min(...xs, ...(points2?points2.xs:[]), ...extraLines.flatMap(e=>e.xs)), xMax = Math.max(...xs, ...(points2?points2.xs:[]), ...extraLines.flatMap(e=>e.xs));
+  const yMin = Math.min(...ys, ...(line?line.ys:[]), ...(points2?points2.ys:[]), ...extraLines.flatMap(e=>e.ys));
+  const yMax = Math.max(...ys, ...(line?line.ys:[]), ...(points2?points2.ys:[]), ...extraLines.flatMap(e=>e.ys));
+  const xPad = (xMax-xMin)*0.1 || 1, yPad=(yMax-yMin)*0.15 || 1;
+  const sx = x => pad + (x-(xMin-xPad))/((xMax+xPad)-(xMin-xPad)) * (w-2*pad);
+  const sy = y => h-pad - (y-(yMin-yPad))/((yMax+yPad)-(yMin-yPad)) * (h-2*pad);
+  let s = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+  // grid
+  for(let i=0;i<=6;i++){
+    const gx = pad + i*(w-2*pad)/6;
+    const gy = pad + i*(h-2*pad)/6;
+    s += `<line x1="${gx}" y1="${pad}" x2="${gx}" y2="${h-pad}" stroke="var(--grid)" stroke-width="1"/>`;
+    s += `<line x1="${pad}" y1="${gy}" x2="${w-pad}" y2="${gy}" stroke="var(--grid)" stroke-width="1"/>`;
+  }
+  // axes
+  s += `<line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="var(--muted)" stroke-width="1.5"/>`;
+  s += `<line x1="${pad}" y1="${pad}" x2="${pad}" y2="${h-pad}" stroke="var(--muted)" stroke-width="1.5"/>`;
+  extraLines.forEach(el=>{
+    const pts = el.xs.map((x,i)=>`${sx(x)},${sy(el.ys[i])}`).join(' ');
+    s += `<polyline points="${pts}" fill="none" stroke="${el.color}" stroke-width="2" stroke-dasharray="${el.dash||'0'}" opacity="${el.opacity||1}"/>`;
+  });
+  if(line){
+    const pts = line.xs.map((x,i)=>`${sx(x)},${sy(line.ys[i])}`).join(' ');
+    s += `<polyline points="${pts}" fill="none" stroke="${line.color||'var(--accent)'}" stroke-width="3"/>`;
+  }
+  xs.forEach((x,i)=>{
+    s += `<circle cx="${sx(x)}" cy="${sy(ys[i])}" r="5" fill="${pointColor}" stroke="var(--bg)" stroke-width="1.5"/>`;
+  });
+  if(points2){
+    points2.xs.forEach((x,i)=>{
+      s += `<circle cx="${sx(x)}" cy="${sy(points2.ys[i])}" r="5" fill="${points2.color||'var(--accent)'}" stroke="var(--bg)" stroke-width="1.5"/>`;
+    });
+  }
+  s += `<text x="${w/2}" y="${h-8}" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="monospace">${xLabel}</text>`;
+  s += `<text x="14" y="${h/2}" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="monospace" transform="rotate(-90 14 ${h/2})">${yLabel}</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+/* =========================================================
+   CONTENT — MODULES
+   ========================================================= */
+const MODULES = [
+/* ============ MODULE 1 ============ */
+{
+  title:"Foundations: Simple Linear Regression",
+  subtitle:"From scatterplot to straight line",
+  html:`
+    <p class="lede">Regression is the art of drawing the line that best explains a relationship between two variables — and then using that line to predict what you haven't measured yet.</p>
+
+    <h3>What linear regression actually does</h3>
+    <p>Given pairs of observations <code>(x, y)</code>, simple linear regression finds the straight line</p>
+    <div class="formula-block">ŷ = b₁x + b₀</div>
+    <p>that minimizes the total squared distance between the line and every point. <code>b₁</code> is the <strong>slope</strong> (how much y changes per unit of x) and <code>b₀</code> is the <strong>intercept</strong> (the predicted y when x = 0). The hat on <code>ŷ</code> signals "predicted," as opposed to the actual observed <code>y</code>.</p>
+
+    <div class="analogy">
+      <div class="eyebrow">Analogy</div>
+      <p style="margin-bottom:0">Imagine a scatter of nails hammered into a board, one per data point. Linear regression is the stiff metal ruler you lay across the nails and nudge until the total spring-tension pulling it toward every nail is as small as possible. The ruler can't bend to hug each nail individually — it can only tilt and shift. That rigidity is the whole point: it forces the line to capture the overall trend, not the noise.</p>
+    </div>
+
+    <h3>The cost function: Mean Squared Error</h3>
+    <p>"Best fit" needs a precise definition. Linear regression defines it as minimizing the <strong>Mean Squared Error (MSE)</strong> between predictions and actual values:</p>
+    <div class="formula-block">MSE = (1/n) · Σ (yᵢ − ŷᵢ)²</div>
+    <p>Squaring the residual <code>(yᵢ − ŷᵢ)</code> does two jobs: it makes every error positive (so overshoot and undershoot don't cancel out), and it penalizes large errors disproportionately more than small ones — a point that's off by 10 contributes 100x more than a point off by 1.</p>
+
+    <div id="widget1"></div>
+
+    <h3>Solving it: the normal equations vs. gradient descent</h3>
+    <p>There are two standard ways to find the <code>b₀, b₁</code> that minimize MSE:</p>
+    <table class="compare-table">
+      <tr><th>Approach</th><th>How it works</th><th>When it's used</th></tr>
+      <tr><td><strong>Normal equations</strong></td><td>Closed-form algebra (calculus + linear algebra) solves for the minimum directly in one step.</td><td>Small-to-medium datasets, few features — exact answer instantly.</td></tr>
+      <tr><td><strong>Gradient descent</strong></td><td>Start with a random line, then repeatedly nudge <code>b₀, b₁</code> a small step in the direction that reduces MSE fastest, like walking downhill.</td><td>Huge datasets or many features, where the closed-form matrix math is too expensive.</td></tr>
+    </table>
+
+    <h3>Correlation vs. regression</h3>
+    <p>These two are constantly confused. <strong>Correlation</strong> (Pearson's r) is a single unitless number from −1 to 1 describing how tightly two variables move together, with no notion of which one "causes" or "predicts" the other. <strong>Regression</strong> produces an equation you can plug new x-values into and get a specific numeric prediction. A correlation of 0.9 tells you the relationship is strong; regression tells you exactly what y to expect for x = 7.3.</p>
+
+    <div class="misconception">
+      <div class="eyebrow">Common misconception</div>
+      <p style="margin-bottom:0"><strong>"Regression" implies a downward trend or getting worse.</strong> The name is a historical accident: Francis Galton studied how the heights of children compared to their parents and found tall parents tended to have somewhat shorter children (closer to average), and short parents somewhat taller children — he called this "regression toward the mean." The statistical technique of line-fitting inherited the name, but it has nothing to do with decline — a regression line can slope up, down, or be flat.</p>
+    </div>
+
+    <h4>Key takeaways</h4>
+    <div class="takeaways">
+      <ul>
+        <li>Simple linear regression fits one straight line, <code>ŷ = b₁x + b₀</code>, through two-variable data.</li>
+        <li>"Best fit" is defined as the line that minimizes Mean Squared Error (MSE) across all points.</li>
+        <li>Squaring residuals prevents positive and negative errors from canceling and penalizes big misses heavily.</li>
+        <li>The line can be solved exactly (normal equations) or approximated iteratively (gradient descent).</li>
+        <li>Correlation measures relationship strength; regression produces an actual predictive equation.</li>
+      </ul>
+    </div>
+  `,
+  widget(){
+    const {xs, ys, xLabel, yLabel} = DATA_LINEAR;
+    const beta = polyFit(xs, ys, 1); // best fit for reference
+    const container = document.getElementById('widget1');
+    container.innerHTML = `
+      <div class="widget-header"><div class="widget-title">Exercise — Fit the line yourself</div><span class="readout" id="w1-diff"></span></div>
+      <p style="font-size:13px;color:var(--muted);margin-top:0">Drag the sliders to change the slope and intercept. Try to get the Mean Squared Error as low as possible before revealing the optimal fit.</p>
+      <div id="w1-plot"></div>
+      <div class="control-row"><label>Slope (b₁)</label><input type="range" id="w1-slope" min="-2" max="12" step="0.1" value="2"><span class="readout" id="w1-slope-val">2.0</span></div>
+      <div class="control-row"><label>Intercept (b₀)</label><input type="range" id="w1-intercept" min="0" max="100" step="1" value="50"><span class="readout" id="w1-intercept-val">50</span></div>
+      <div class="metric-row">
+        <div class="metric"><div class="val" id="w1-mse">-</div><div class="lbl">Your MSE</div></div>
+        <div class="metric"><div class="val" id="w1-best">${mse(ys, xs.map(x=>polyPredict(beta,x))).toFixed(1)}</div><div class="lbl">Best possible MSE</div></div>
+      </div>
+      <div class="btn-row"><button class="btn" id="w1-reveal">Reveal optimal line</button></div>
+    `;
+    function render(){
+      const slope = parseFloat(document.getElementById('w1-slope').value);
+      const intercept = parseFloat(document.getElementById('w1-intercept').value);
+      document.getElementById('w1-slope-val').textContent = slope.toFixed(1);
+      document.getElementById('w1-intercept-val').textContent = intercept.toFixed(0);
+      const lineYs = xs.map(x=>slope*x+intercept);
+      document.getElementById('w1-mse').textContent = mse(ys, lineYs).toFixed(1);
+      document.getElementById('w1-plot').innerHTML = svgScatterLine({xs, ys, xLabel, yLabel, line:{xs, ys:lineYs, color:'var(--accent)'}});
+    }
+    document.getElementById('w1-slope').addEventListener('input', render);
+    document.getElementById('w1-intercept').addEventListener('input', render);
+    document.getElementById('w1-reveal').addEventListener('click', ()=>{
+      document.getElementById('w1-slope').value = beta[1].toFixed(1);
+      document.getElementById('w1-intercept').value = Math.round(beta[0]);
+      render();
+    });
+    render();
+  },
+  quiz:[
+    {q:"What does simple linear regression solve for?", opts:["The strongest possible correlation coefficient","The straight line that minimizes Mean Squared Error between predictions and actual values","A curve that passes through every data point exactly","The average of all y-values"], correct:1, explain:"Linear regression finds the b₀ and b₁ that make the total squared distance between the line and the data points as small as possible — that's what MSE measures."},
+    {q:"Why does the cost function square the residuals instead of just adding them up?", opts:["Squaring makes the math run faster on computers","It converts negative errors to positive so they don't cancel out, and penalizes large errors more heavily","Squaring is only cosmetic and has no real effect","It guarantees the line passes through the origin"], correct:1, explain:"Without squaring, a point 5 units above the line and one 5 units below would cancel to zero net error. Squaring makes every residual positive and disproportionately punishes big misses."},
+    {q:"In ŷ = b₁x + b₀, what does b₀ represent?", opts:["The slope of the line","The predicted value of y when x = 0 (the intercept)","The correlation coefficient","The mean squared error"], correct:1, explain:"b₀ is the intercept — where the line crosses the y-axis, i.e. the model's prediction when x is zero."},
+    {q:"What is the key difference between correlation and regression?", opts:["They are two names for the exact same calculation","Correlation measures relationship strength as a single number; regression produces an equation that generates specific predictions","Correlation only works on curves, regression only works on lines","Regression cannot be used with more than one variable"], correct:1, explain:"Correlation (r) is a unitless summary of how tightly variables move together. Regression goes further, producing a usable equation you can feed new x-values into for concrete predictions."}
+  ]
+},
+/* ============ MODULE 2 ============ */
+{
+  title:"Multiple Linear Regression & Assumptions",
+  subtitle:"Adding more predictors, and what can go wrong",
+  html:`
+    <p class="lede">Real problems rarely depend on a single input. Multiple linear regression extends the same idea to many predictors at once, but it also comes with assumptions that, when violated, quietly wreck your model's reliability.</p>
+
+    <h3>Extending to multiple predictors</h3>
+    <p>Instead of one x, we now have several: house price might depend on square footage, number of bedrooms, and distance to downtown simultaneously.</p>
+    <div class="formula-block">ŷ = b₀ + b₁x₁ + b₂x₂ + ... + bₚxₚ</div>
+    <p>Each coefficient <code>bᵢ</code> represents the effect of that feature <em>holding all other features constant</em> — a subtlety that trips people up constantly. <code>b₂</code> for "bedrooms" isn't the raw effect of adding a bedroom; it's the effect after the model has already accounted for square footage and location.</p>
+
+    <div class="analogy">
+      <div class="eyebrow">Analogy</div>
+      <p style="margin-bottom:0">Think of baking bread. The final loaf's rise depends on flour amount, yeast amount, and proofing time together. Simple linear regression is like only ever changing the yeast and assuming everything else is fixed. Multiple regression is a recipe that accounts for all three ingredients at once, isolating how much each one contributes to the final rise while the others are held steady.</p>
+    </div>
+
+    <h3>The core assumptions</h3>
+    <p>Linear regression's coefficients and predictions are only trustworthy when several conditions roughly hold:</p>
+    <table class="compare-table">
+      <tr><th>Assumption</th><th>What it means</th><th>How you check it</th></tr>
+      <tr><td><strong>Linearity</strong></td><td>The true relationship between predictors and target is approximately a straight line/plane.</td><td>Scatterplots of each predictor vs. target; residual plots.</td></tr>
+      <tr><td><strong>Independence</strong></td><td>Observations (and their errors) don't influence each other — no hidden ordering effect.</td><td>Know your data collection process; check for time-based patterns.</td></tr>
+      <tr><td><strong>Homoscedasticity</strong></td><td>The spread of residuals stays roughly constant across all predicted values.</td><td>Plot residuals vs. predicted values, look for a "funnel" shape.</td></tr>
+      <tr><td><strong>Normality of residuals</strong></td><td>Leftover errors are roughly bell-shaped, centered at zero.</td><td>Histogram or Q-Q plot of residuals.</td></tr>
+      <tr><td><strong>Low multicollinearity</strong></td><td>Predictors aren't strongly correlated with each other.</td><td>Correlation matrix; Variance Inflation Factor (VIF).</td></tr>
+    </table>
+
+    <div id="widget2"></div>
+
+    <h3>Simple vs. multiple regression</h3>
+    <table class="compare-table">
+      <tr><th></th><th>Simple linear regression</th><th>Multiple linear regression</th></tr>
+      <tr><td>Predictors</td><td>Exactly 1</td><td>2 or more</td></tr>
+      <tr><td>Geometry</td><td>A line in 2D</td><td>A flat plane (or hyperplane) in higher dimensions</td></tr>
+      <tr><td>Coefficient meaning</td><td>Direct effect of x on y</td><td>Effect of xᵢ on y, holding other predictors constant</td></tr>
+      <tr><td>Main new risk</td><td>—</td><td>Multicollinearity between predictors</td></tr>
+    </table>
+
+    <div class="misconception">
+      <div class="eyebrow">Common misconception</div>
+      <p style="margin-bottom:0"><strong>"More features always make the model better."</strong> Adding irrelevant or redundant features can inflate variance, introduce multicollinearity, and make coefficients unstable or nonsensical (even flipping sign). A model with 3 well-chosen features often generalizes better than one with 20 noisy ones — this is the seed of the bias-variance tradeoff you'll meet properly in Module 3.</p>
+    </div>
+
+    <h4>Key takeaways</h4>
+    <div class="takeaways">
+      <ul>
+        <li>Multiple regression fits a hyperplane using several predictors simultaneously: ŷ = b₀ + b₁x₁ + ... + bₚxₚ.</li>
+        <li>Each coefficient represents an effect <em>holding all other predictors constant</em> — not in isolation.</li>
+        <li>Reliable inference depends on five assumptions: linearity, independence, homoscedasticity, normal residuals, low multicollinearity.</li>
+        <li>Residual plots are the primary diagnostic tool for spotting assumption violations.</li>
+        <li>Piling on features isn't free — it can destabilize coefficients and hurt generalization.</li>
+      </ul>
+    </div>
+  `,
+  widget(){
+    const container = document.getElementById('widget2');
+    container.innerHTML = `
+      <div class="widget-header"><div class="widget-title">Exercise — Diagnose the residual plot</div></div>
+      <p style="font-size:13px;color:var(--muted);margin-top:0">Residual plots show predicted value (x-axis) vs. leftover error (y-axis). Pick a pattern and see what it implies about your model's assumptions.</p>
+      <div class="control-row">
+        <label style="min-width:auto">Pattern:</label>
+        <select id="w2-pattern" style="background:var(--surface2); color:var(--text); border:1px solid var(--grid); border-radius:8px; padding:8px 10px; font-family:monospace;">
+          <option value="good">Random scatter around zero</option>
+          <option value="funnel">Funnel / fan shape</option>
+          <option value="curve">U-shaped curve</option>
+        </select>
+      </div>
+      <div id="w2-plot"></div>
+      <div class="quiz-explain show" id="w2-explain" style="margin-top:14px;"></div>
+    `;
+    const explanations = {
+      good:"✅ This is what you want. Residuals are randomly scattered around zero with no visible shape — the model's assumptions of linearity and homoscedasticity are reasonably satisfied.",
+      funnel:"⚠️ Heteroscedasticity. The spread of residuals grows as predicted values increase — the model is far less certain for larger predictions. This means standard errors and confidence intervals will be unreliable, even if the average prediction is roughly right.",
+      curve:"⚠️ Non-linearity. A systematic U-shape means the model is consistently over- or under-predicting in different ranges — a straight line is the wrong shape for this relationship. This is a strong signal to consider polynomial terms (Module 3) or a transformation."
+    };
+    function genPattern(kind){
+      const n=40; const xs=[]; const ys=[];
+      for(let i=0;i<n;i++){
+        const x = i/(n-1)*10;
+        let y;
+        if(kind==='good') y = (Math.random()-0.5)*4;
+        else if(kind==='funnel') y = (Math.random()-0.5)*4*(0.3+x/5);
+        else y = Math.pow(x-5,2)*0.25 - 3 + (Math.random()-0.5)*1.5;
+        xs.push(x); ys.push(y);
+      }
+      return {xs,ys};
+    }
+    function render(){
+      const kind = document.getElementById('w2-pattern').value;
+      const {xs,ys} = genPattern(kind);
+      document.getElementById('w2-plot').innerHTML = svgScatterLine({
+        xs, ys, xLabel:"Predicted value", yLabel:"Residual",
+        extraLines:[{xs:[0,10], ys:[0,0], color:'var(--muted)', dash:'4,4'}]
+      });
+      document.getElementById('w2-explain').textContent = explanations[kind];
+    }
+    document.getElementById('w2-pattern').addEventListener('change', render);
+    render();
+  },
+  quiz:[
+    {q:"In multiple regression, what does the coefficient b₂ for a specific predictor x₂ represent?", opts:["The total variance explained by the whole model","The effect of x₂ on y while holding all other predictors constant","The correlation between x₂ and y only","The order in which x₂ was added to the model"], correct:1, explain:"Each coefficient in a multiple regression isolates that predictor's effect after accounting for the others — it is NOT the same as x₂'s simple, standalone correlation with y."},
+    {q:"A residual plot showing a widening 'funnel' shape as predicted values increase indicates which problem?", opts:["Multicollinearity","Heteroscedasticity (non-constant variance of errors)","Perfect linearity","Too few data points"], correct:1, explain:"A funnel-shaped residual plot is the classic signature of heteroscedasticity — the model's error spread isn't constant across the range of predictions, which undermines statistical inference."},
+    {q:"Which of these is a symptom of high multicollinearity between predictors?", opts:["Residuals perfectly follow a normal distribution","Coefficients become unstable and can even flip sign when predictors are highly correlated with each other","The model automatically achieves 100% R²","Training becomes impossible to run at all"], correct:1, explain:"When predictors are highly correlated with each other, the model can't cleanly separate their individual effects, so coefficient estimates become unstable, unreliable, and can shift dramatically or even flip sign."},
+    {q:"Why is 'more features always better' a misconception?", opts:["Extra features are always computationally too expensive to use","Extra irrelevant or redundant features can add instability and hurt generalization even if training error goes down","Adding features is mathematically impossible after 2 predictors","Models can only accept exactly one feature at a time"], correct:1, explain:"Piling on features can inflate variance, introduce multicollinearity, and cause the model to fit noise rather than signal — hurting how well it generalizes to new data, even as training error looks better."}
+  ]
+},
+/* ============ MODULE 3 ============ */
+{
+  title:"Polynomial Regression: Fitting Curves",
+  subtitle:"Underfitting, overfitting, and the bias-variance tradeoff",
+  html:`
+    <p class="lede">Not every relationship is a straight line. Polynomial regression lets a "linear model" bend into curves — but that flexibility comes with a brand-new danger: fitting the noise instead of the pattern.</p>
+
+    <h3>Adding curvature with polynomial terms</h3>
+    <p>Polynomial regression extends the same linear regression machinery by adding powers of x as new features:</p>
+    <div class="formula-block">ŷ = b₀ + b₁x + b₂x² + b₃x³ + ... + bₙxⁿ</div>
+    <p>The crucial (and often surprising) detail: this is still called <em>linear</em> regression, because the model is linear <strong>in its coefficients</strong> b₀...bₙ — we're just feeding it x², x³ etc. as additional input columns. The fitting procedure (minimize MSE via normal equations) is identical to Module 1 and 2; only the shape of the input features changed.</p>
+
+    <div class="analogy">
+      <div class="eyebrow">Analogy</div>
+      <p style="margin-bottom:0">Picture tailoring a suit. A degree-1 (straight line) fit is an off-the-rack suit — same shape regardless of your body, comfortable enough but ignoring your actual curves (underfitting). A very high-degree polynomial is a suit stitched to hug every single wrinkle, fold, and momentary slouch you happened to have on the day of measurement (overfitting) — it looks perfect in the fitting room but is useless the next time you move differently. The right degree is a well-tailored suit: it follows your real proportions without reacting to every temporary wrinkle.</p>
+    </div>
+
+    <div id="widget3"></div>
+
+    <h3>Underfitting vs. overfitting</h3>
+    <table class="compare-table">
+      <tr><th></th><th>Underfitting (degree too low)</th><th>Good fit</th><th>Overfitting (degree too high)</th></tr>
+      <tr><td>Training error</td><td>High</td><td>Low</td><td>Very low (near zero)</td></tr>
+      <tr><td>Test error</td><td>High</td><td>Low</td><td><strong>High</strong></td></tr>
+      <tr><td>Curve behavior</td><td>Too rigid, ignores real curvature</td><td>Follows the true trend</td><td>Wild oscillations chasing noise</td></tr>
+      <tr><td>Bias / Variance</td><td>High bias, low variance</td><td>Balanced</td><td>Low bias, <strong>high variance</strong></td></tr>
+    </table>
+
+    <h3>The bias-variance tradeoff</h3>
+    <p><strong>Bias</strong> is error from overly simplistic assumptions (a straight line forced onto a curved reality). <strong>Variance</strong> is error from over-sensitivity to the specific training sample (a wiggly degree-9 curve that would look completely different if you resampled the data). Model complexity trades one for the other: increasing polynomial degree always lowers bias but eventually raises variance. The best degree is the one that minimizes their combined effect on new, unseen data — not on the training data itself.</p>
+
+    <div class="misconception">
+      <div class="eyebrow">Common misconception</div>
+      <p style="margin-bottom:0"><strong>"A model with near-zero training error is a great model."</strong> Training error only tells you how well the model memorized the data it already saw. A degree-9 polynomial can hit every training point almost exactly and still make wildly wrong predictions on new data — because it "explained" the random noise as if it were signal. Low training error is necessary but nowhere near sufficient; what matters is performance on data the model hasn't seen (Module 4).</p>
+    </div>
+
+    <h4>Key takeaways</h4>
+    <div class="takeaways">
+      <ul>
+        <li>Polynomial regression adds powers of x (x², x³, ...) as extra features to a linear model — it's still "linear" in its coefficients.</li>
+        <li>Low-degree polynomials risk underfitting (too rigid); high-degree polynomials risk overfitting (too reactive to noise).</li>
+        <li>The bias-variance tradeoff formalizes this: complexity trades bias for variance.</li>
+        <li>Training error alone cannot tell you if a model has overfit — you need to check performance on unseen data.</li>
+        <li>Choosing polynomial degree is a model-selection problem, not just an accuracy-maximization one.</li>
+      </ul>
+    </div>
+  `,
+  widget(){
+    const {xs, ys, xLabel, yLabel} = DATA_POLY;
+    const container = document.getElementById('widget3');
+    container.innerHTML = `
+      <div class="widget-header"><div class="widget-title">Exercise — Tune the polynomial degree</div><span class="readout" id="w3-status"></span></div>
+      <p style="font-size:13px;color:var(--muted);margin-top:0">Drag the degree slider from 1 (straight line) to 9 (highly flexible curve) and watch the fit change.</p>
+      <div id="w3-plot"></div>
+      <div class="control-row"><label>Polynomial degree</label><input type="range" id="w3-degree" min="1" max="9" step="1" value="1"><span class="readout" id="w3-degree-val">1</span></div>
+      <div class="metric-row">
+        <div class="metric"><div class="val" id="w3-mse">-</div><div class="lbl">Training MSE</div></div>
+        <div class="metric"><div class="val" id="w3-verdict">-</div><div class="lbl">Likely regime</div></div>
+      </div>
+    `;
+    function render(){
+      const degree = parseInt(document.getElementById('w3-degree').value);
+      document.getElementById('w3-degree-val').textContent = degree;
+      const beta = polyFit(xs, ys, degree);
+      const fineXs = []; for(let i=0;i<=80;i++) fineXs.push(xs[0] + i*(xs[xs.length-1]-xs[0])/80);
+      const fineYs = fineXs.map(x=>polyPredict(beta,x));
+      const trainPreds = xs.map(x=>polyPredict(beta,x));
+      const trainMSE = mse(ys, trainPreds);
+      document.getElementById('w3-mse').textContent = trainMSE.toFixed(2);
+      let verdict = "Balanced ✅";
+      if(degree<=1) verdict = "Underfitting ⚠️";
+      else if(degree>=7) verdict = "Overfitting ⚠️";
+      document.getElementById('w3-verdict').textContent = verdict;
+      document.getElementById('w3-plot').innerHTML = svgScatterLine({
+        xs, ys, xLabel, yLabel, line:{xs:fineXs, ys:fineYs, color: degree>=7 ? 'var(--accent2)':'var(--accent)'}
+      });
+    }
+    document.getElementById('w3-degree').addEventListener('input', render);
+    render();
+  },
+  quiz:[
+    {q:"Why is polynomial regression still classified as a 'linear model' even though it produces curves?", opts:["Because the resulting curve always looks like a straight line from far away","Because it is linear in its coefficients — powers of x are just treated as additional input features","Because polynomial regression only works when the true relationship is linear","Because the term 'linear' refers to the shape of the graph, not the math"], correct:1, explain:"The model ŷ = b₀ + b₁x + b₂x² + ... is linear in b₀, b₁, b₂ — those coefficients combine additively. The curvature comes from feeding in x, x², x³ as separate features, not from any nonlinearity in how the coefficients combine."},
+    {q:"A degree-9 polynomial achieves near-zero training error but performs poorly on new data. What is this called?", opts:["Underfitting","Overfitting","Perfect generalization","Homoscedasticity"], correct:1, explain:"This is the textbook definition of overfitting: the model has effectively memorized training noise as if it were signal, so it fails to generalize to unseen data."},
+    {q:"In the bias-variance tradeoff, what happens to bias and variance as model complexity (polynomial degree) increases?", opts:["Both bias and variance always decrease together","Bias tends to decrease while variance tends to increase","Bias tends to increase while variance tends to decrease","Neither is affected by model complexity"], correct:1, explain:"More flexible models can fit the true underlying pattern more closely (lower bias) but become more sensitive to the specific noise in the training sample (higher variance)."},
+    {q:"Why can't training error alone tell you whether a model has overfit?", opts:["Training error is always exactly zero regardless of the model","Training error only reflects performance on data the model has already seen, not on new, unseen data","Overfitting only affects test data, never training data at all","Training error cannot be computed for polynomial models"], correct:1, explain:"A sufficiently flexible model can drive training error arbitrarily low by fitting noise. Only checking performance on held-out data unseen during fitting (Module 4) reveals whether that low error reflects real learning or just memorization."}
+  ]
+},
+/* ============ MODULE 4 ============ */
+{
+  title:"Model Evaluation & Practical Workflow",
+  subtitle:"Train/test splits, metrics, and choosing the right complexity",
+  html:`
+    <p class="lede">A model is only as trustworthy as the way it's evaluated. This module ties everything together into the practical workflow you'd actually use to build and validate a regression model.</p>
+
+    <h3>Train/test split</h3>
+    <p>To honestly measure generalization, you never evaluate a model on the same data it was fit on. Instead, you split your dataset:</p>
+    <table class="compare-table">
+      <tr><th>Set</th><th>Purpose</th><th>Typical size</th></tr>
+      <tr><td><strong>Training set</strong></td><td>Used to fit the model's coefficients</td><td>~70–80%</td></tr>
+      <tr><td><strong>Test set</strong></td><td>Held out entirely until the end, used to estimate real-world performance</td><td>~20–30%</td></tr>
+      <tr><td><strong>Validation set (optional)</strong></td><td>Used during development to tune choices like polynomial degree, without peeking at the test set</td><td>Carved out of training data</td></tr>
+    </table>
+    <p>For more robust estimates with limited data, <strong>k-fold cross-validation</strong> repeats this process k times with different splits and averages the results, so every point gets used for both training and validation across folds.</p>
+
+    <h3>Evaluation metrics</h3>
+    <div class="formula-block">R² = 1 − (SS_residual / SS_total)</div>
+    <p><code>R²</code> ("R-squared") measures the proportion of variance in y explained by the model, from roughly 0 (no better than predicting the mean) to 1 (perfect fit). <strong>RMSE</strong> (root mean squared error) and <strong>MAE</strong> (mean absolute error) express typical prediction error in the same units as y — RMSE penalizes large errors more (due to squaring), MAE treats all errors proportionally.</p>
+
+    <div id="widget4"></div>
+
+    <h3>A preview of regularization</h3>
+    <p>Rather than manually picking a polynomial degree, techniques like <strong>Ridge</strong> and <strong>Lasso</strong> regression add a penalty term to the cost function that discourages coefficients from growing too large, automatically taming overfitting even with a high-degree model. You'll go deeper on these in a dedicated "Regularized Regression" tutorial — for now, know that they exist as the next natural step once you're comfortable with everything here.</p>
+
+    <h3>Feature scaling for polynomial terms</h3>
+    <p>Because x² and x³ grow at very different rates than x, unscaled polynomial features can cause numerical instability during fitting. Standardizing (subtracting the mean, dividing by standard deviation) each feature before fitting keeps the optimization well-behaved, especially at higher degrees.</p>
+
+    <div class="misconception">
+      <div class="eyebrow">Common misconception</div>
+      <p style="margin-bottom:0"><strong>"A higher R² on the training set means a better model."</strong> R² on training data mechanically increases (or stays the same) every time you add a feature or raise polynomial degree — even meaningless ones. Only R² (or RMSE/MAE) computed on held-out test data honestly reflects predictive quality.</p>
+    </div>
+
+    <h4>Key takeaways</h4>
+    <div class="takeaways">
+      <ul>
+        <li>Always evaluate on a held-out test set (or via cross-validation) — never on the data used for fitting.</li>
+        <li>R², RMSE, and MAE each summarize error differently; report more than one when possible.</li>
+        <li>The best model complexity is the one that minimizes <em>test</em> error, not training error — this is usually U-shaped as complexity grows.</li>
+        <li>Regularization (Ridge/Lasso) offers an automatic alternative to manually selecting polynomial degree.</li>
+        <li>Scale polynomial features before fitting to keep the optimization numerically stable.</li>
+      </ul>
+    </div>
+  `,
+  widget(){
+    const {trainX, trainY, testX, testY} = DATA_SPLIT;
+    const container = document.getElementById('widget4');
+    const degrees = [1,2,3,4,5,6,7,8,9];
+    const trainErrs = [], testErrs = [];
+    degrees.forEach(d=>{
+      const beta = polyFit(trainX, trainY, d);
+      trainErrs.push(mse(trainY, trainX.map(x=>polyPredict(beta,x))));
+      testErrs.push(mse(testY, testX.map(x=>polyPredict(beta,x))));
+    });
+    container.innerHTML = `
+      <div class="widget-header"><div class="widget-title">Train error vs. test error by complexity</div></div>
+      <p style="font-size:13px;color:var(--muted);margin-top:0">Same dataset as Module 3, now split into training (7 pts) and test (6 pts). Watch how training error keeps falling while test error bottoms out and then rises — the signature U-curve of overfitting.</p>
+      <div id="w4-plot"></div>
+      <div class="control-row"><label>Highlight degree</label><input type="range" id="w4-degree" min="1" max="9" step="1" value="1"><span class="readout" id="w4-degree-val">1</span></div>
+      <div class="metric-row">
+        <div class="metric"><div class="val" id="w4-train">-</div><div class="lbl">Train MSE</div></div>
+        <div class="metric"><div class="val" id="w4-test">-</div><div class="lbl">Test MSE</div></div>
+      </div>
+    `;
+    function render(){
+      const highlight = parseInt(document.getElementById('w4-degree').value);
+      document.getElementById('w4-degree-val').textContent = highlight;
+      document.getElementById('w4-train').textContent = trainErrs[highlight-1].toFixed(2);
+      document.getElementById('w4-test').textContent = testErrs[highlight-1].toFixed(2);
+      const maxY = Math.max(...testErrs.slice(0,7), ...trainErrs)*1.1;
+      const cappedTest = testErrs.map(v=>Math.min(v,maxY));
+      document.getElementById('w4-plot').innerHTML = svgScatterLine({
+        xs:[], ys:[], w:640, h:300,
+        extraLines:[
+          {xs:degrees, ys:trainErrs, color:'var(--accent)', opacity:1},
+          {xs:degrees, ys:cappedTest, color:'var(--accent2)', opacity:1}
+        ],
+        line:{xs:[highlight,highlight], ys:[0,maxY], color:'var(--muted)'},
+        xLabel:"Polynomial degree (teal=train, coral=test)", yLabel:"MSE"
+      });
+    }
+    document.getElementById('w4-degree').addEventListener('input', render);
+    render();
+  },
+  quiz:[
+    {q:"Why must a model be evaluated on a held-out test set rather than the training set?", opts:["Test sets always produce lower error than training sets by definition","Training error doesn't reveal overfitting, since the model has already seen and adapted to that exact data","It is a legal requirement in most industries","Test sets are only needed for classification, not regression"], correct:1, explain:"A model can fit training data extremely well by memorizing noise. Only performance on data it hasn't seen (the test set) shows whether the model has actually learned the general pattern."},
+    {q:"What does R² = 0.85 mean?", opts:["The model is correct 85% of the time","85% of the variance in the target variable is explained by the model","The model's predictions are off by 85 units on average","85% of the data points were used in training"], correct:1, explain:"R² expresses the proportion of variance in y that the model accounts for — 0.85 means 85% of the variability in the outcome is explained by the fitted model, leaving 15% unexplained."},
+    {q:"As polynomial degree increases, what typically happens to training error and test error?", opts:["Both increase steadily together","Both decrease steadily together, forever","Training error keeps decreasing, while test error decreases then eventually increases again (a U-shape)","Neither changes with polynomial degree"], correct:2, explain:"Training error can keep shrinking as the model gets more flexible, but test error typically falls at first (better fit) then rises again once the model starts overfitting — the classic U-shaped curve."},
+    {q:"What is the main purpose of Ridge or Lasso regularization, previewed in this module?", opts:["To automatically collect more training data","To add a penalty that discourages overly large coefficients, helping control overfitting without manually picking degree","To replace the need for a test set entirely","To convert a regression problem into a classification problem"], correct:1, explain:"Regularization techniques add a penalty term to the cost function based on coefficient size, which shrinks or eliminates less useful coefficients and helps tame overfitting even in flexible, high-degree models."}
+  ]
+}
+];
+
+/* =========================================================
+   FINAL CHALLENGE, CHEAT SHEET, RESOURCES
+   ========================================================= */
+function renderFinalChallenge(){
+  const {trainX, trainY, testX, testY} = DATA_SPLIT;
+  return `
+    <p class="lede">You've been handed a small sensor dataset (same shape as Module 3 and 4). Your job: pick the polynomial degree that generalizes best, justify it with the metrics, and lock in your answer.</p>
+    <div class="widget">
+      <div class="widget-header"><div class="widget-title">Final Challenge — Choose the best degree</div><span class="readout" id="fc-status">Not submitted</span></div>
+      <div id="fc-plot"></div>
+      <div class="control-row"><label>Polynomial degree</label><input type="range" id="fc-degree" min="1" max="9" step="1" value="1"><span class="readout" id="fc-degree-val">1</span></div>
+      <div class="metric-row">
+        <div class="metric"><div class="val" id="fc-train">-</div><div class="lbl">Train MSE</div></div>
+        <div class="metric"><div class="val" id="fc-test">-</div><div class="lbl">Test MSE</div></div>
+        <div class="metric"><div class="val" id="fc-r2">-</div><div class="lbl">Test R²</div></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" id="fc-submit">Lock in this degree</button></div>
+      <div class="quiz-explain" id="fc-feedback"></div>
+    </div>
+  `;
+}
+function wireFinalChallenge(){
+  const {trainX, trainY, testX, testY} = DATA_SPLIT;
+  let bestDegree=1, bestErr=Infinity;
+  for(let d=1; d<=9; d++){
+    const beta = polyFit(trainX, trainY, d);
+    const e = mse(testY, testX.map(x=>polyPredict(beta,x)));
+    if(e<bestErr){bestErr=e; bestDegree=d;}
+  }
+  function render(){
+    const degree = parseInt(document.getElementById('fc-degree').value);
+    document.getElementById('fc-degree-val').textContent = degree;
+    const beta = polyFit(trainX, trainY, degree);
+    const trainMSE = mse(trainY, trainX.map(x=>polyPredict(beta,x)));
+    const testPreds = testX.map(x=>polyPredict(beta,x));
+    const testMSE = mse(testY, testPreds);
+    const testR2 = r2(testY, testPreds);
+    document.getElementById('fc-train').textContent = trainMSE.toFixed(2);
+    document.getElementById('fc-test').textContent = testMSE.toFixed(2);
+    document.getElementById('fc-r2').textContent = isFinite(testR2)? testR2.toFixed(2): '—';
+    const fineXs=[]; for(let i=0;i<=80;i++) fineXs.push(-3 + i*6/80);
+    const fineYs = fineXs.map(x=>polyPredict(beta,x));
+    document.getElementById('fc-plot').innerHTML = svgScatterLine({
+      xs:[...trainX], ys:[...trainY], xLabel:"x  (teal dots = train, coral dots = test)", yLabel:"y",
+      line:{xs:fineXs, ys:fineYs, color:'var(--accent)'},
+      pointColor:'var(--accent)',
+      points2:{xs:testX, ys:testY, color:'var(--accent2)'}
+    });
+  }
+  document.getElementById('fc-degree').addEventListener('input', render);
+  document.getElementById('fc-submit').addEventListener('click', ()=>{
+    const degree = parseInt(document.getElementById('fc-degree').value);
+    const fb = document.getElementById('fc-feedback');
+    fb.classList.add('show');
+    if(Math.abs(degree-bestDegree)<=1){
+      fb.innerHTML = `🏆 Great call. Degree ${degree} keeps test error near its minimum (the sweet spot in this dataset is around degree ${bestDegree}). You balanced bias and variance instead of chasing training accuracy.`;
+      document.getElementById('fc-status').textContent = "Passed ✓";
+      state.finalDone = true;
+      awardXP(150);
+      saveState();
+      renderSidebar();
+    } else if(degree < bestDegree){
+      fb.innerHTML = `⚠️ Degree ${degree} is likely underfitting — the curve is too rigid to capture the true shape, so both train and test error stay higher than they need to. Try increasing the degree slightly and compare test MSE.`;
+      document.getElementById('fc-status').textContent = "Try again";
+    } else {
+      fb.innerHTML = `⚠️ Degree ${degree} is likely overfitting — training error looks great, but test error is climbing because the curve is chasing noise. Try lowering the degree and comparing test MSE.`;
+      document.getElementById('fc-status').textContent = "Try again";
+    }
+  });
+  render();
+}
+
+const CHEAT_SHEET = `
+  <div class="card-grid">
+    <div class="card">
+      <h4>Core formulas</h4>
+      <p style="margin:6px 0"><strong>Simple linear:</strong> <code>ŷ = b₁x + b₀</code></p>
+      <p style="margin:6px 0"><strong>Multiple linear:</strong> <code>ŷ = b₀ + b₁x₁ + ... + bₚxₚ</code></p>
+      <p style="margin:6px 0"><strong>Polynomial:</strong> <code>ŷ = b₀ + b₁x + b₂x² + ... + bₙxⁿ</code></p>
+      <p style="margin:6px 0"><strong>MSE:</strong> <code>(1/n)Σ(yᵢ−ŷᵢ)²</code></p>
+      <p style="margin:6px 0"><strong>RMSE:</strong> <code>√MSE</code></p>
+      <p style="margin:6px 0"><strong>R²:</strong> <code>1 − SSres/SStot</code></p>
+    </div>
+    <div class="card">
+      <h4>Diagnosis quick-reference</h4>
+      <p style="margin:6px 0">🔻 High train + test error → <strong>underfitting</strong>, raise complexity</p>
+      <p style="margin:6px 0">🔺 Low train, high test error → <strong>overfitting</strong>, lower complexity or regularize</p>
+      <p style="margin:6px 0">📈 Funnel-shaped residuals → <strong>heteroscedasticity</strong></p>
+      <p style="margin:6px 0">〰️ U-shaped residuals → try polynomial terms</p>
+      <p style="margin:6px 0">🔗 Unstable coefficients → check <strong>multicollinearity</strong></p>
+    </div>
+  </div>
+  <div class="card">
+    <h4>Workflow checklist</h4>
+    <div class="takeaways" style="margin:0;">
+      <ul>
+        <li>Split into train / test (or use k-fold cross-validation)</li>
+        <li>Fit on training data only</li>
+        <li>Scale polynomial features before fitting at higher degrees</li>
+        <li>Check residual plots for linearity + homoscedasticity</li>
+        <li>Compare degree/complexity by <em>test</em> MSE, R², not training numbers</li>
+        <li>Consider Ridge/Lasso instead of manual degree tuning</li>
+      </ul>
+    </div>
+  </div>
+`;
+
+const RESOURCES = `
+  <div class="res-grid">
+    <div class="card">
+      <h4>Books</h4>
+      <ul class="res-list">
+        <li><span class="t">An Introduction to Statistical Learning</span><span class="d">James, Witten, Hastie, Tibshirani — the standard first textbook covering regression rigorously with applied labs.</span></li>
+        <li><span class="t">The Elements of Statistical Learning</span><span class="d">Hastie, Tibshirani, Friedman — the deeper, more mathematical follow-up.</span></li>
+        <li><span class="t">Hands-On Machine Learning with Scikit-Learn, Keras & TensorFlow</span><span class="d">Aurélien Géron — practical, code-first treatment of regression and beyond.</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Documentation</h4>
+      <ul class="res-list">
+        <li><span class="t">scikit-learn: Linear Models</span><span class="d">Official docs for LinearRegression, PolynomialFeatures, Ridge, and Lasso.</span></li>
+        <li><span class="t">NumPy polyfit / numpy.linalg</span><span class="d">Low-level tools for fitting polynomials and solving normal equations directly.</span></li>
+        <li><span class="t">statsmodels OLS documentation</span><span class="d">Detailed statistical output — p-values, confidence intervals, diagnostic tests.</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Foundational &amp; research reading</h4>
+      <ul class="res-list">
+        <li><span class="t">Galton, F. (1886) — "Regression towards Mediocrity in Hereditary Stature"</span><span class="d">The original paper that coined the term "regression."</span></li>
+        <li><span class="t">Legendre (1805) / Gauss (1809) — Least Squares</span><span class="d">The historical origin of the least-squares fitting method underlying all linear regression.</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Communities</h4>
+      <ul class="res-list">
+        <li><span class="t">r/MachineLearning &amp; r/statistics</span><span class="d">Active discussion, paper reviews, and Q&amp;A.</span></li>
+        <li><span class="t">Cross Validated (stats.stackexchange.com)</span><span class="d">The go-to Q&amp;A site for statistical modeling questions.</span></li>
+        <li><span class="t">Kaggle Discussions</span><span class="d">Applied conversations tied directly to real datasets and competitions.</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Practice platforms</h4>
+      <ul class="res-list">
+        <li><span class="t">Kaggle Datasets &amp; Competitions</span><span class="d">Real-world tabular datasets perfect for practicing regression end-to-end.</span></li>
+        <li><span class="t">Google Colab</span><span class="d">Free hosted notebooks with scikit-learn pre-installed — zero setup.</span></li>
+        <li><span class="t">UCI Machine Learning Repository</span><span class="d">Classic, well-documented regression datasets (housing, wine quality, etc.)</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Search keywords</h4>
+      <div>
+        <span class="kw-chip">ordinary least squares</span>
+        <span class="kw-chip">gradient descent linear regression</span>
+        <span class="kw-chip">polynomial features overfitting</span>
+        <span class="kw-chip">bias variance tradeoff</span>
+        <span class="kw-chip">residual plot diagnostics</span>
+        <span class="kw-chip">ridge vs lasso regression</span>
+        <span class="kw-chip">k-fold cross validation</span>
+        <span class="kw-chip">multicollinearity VIF</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h4>Prompts for continued AI-assisted learning</h4>
+    <div class="prompt-box">"Walk me through deriving the normal equations for linear regression from the MSE cost function, step by step."</div>
+    <div class="prompt-box">"Give me a small synthetic dataset and have me practice choosing between Ridge and Lasso regularization by explaining the tradeoffs for each choice I make."</div>
+    <div class="prompt-box">"Quiz me on reading residual plots — describe a pattern and ask me to diagnose which assumption is violated."</div>
+    <div class="prompt-box">"Explain polynomial regression's connection to the more general concept of basis function expansion, and how that idea extends to kernel methods."</div>
+  </div>
+`;
+
+/* =========================================================
+   RENDER ENGINE
+   ========================================================= */
+const SECTIONS = ['intro','m0','m1','m2','m3','final','resources'];
+function sectionLabel(id){
+  if(id==='intro') return 'Introduction';
+  if(id==='final') return 'Final Challenge';
+  if(id==='resources') return 'Cheat Sheet & Resources';
+  const idx = parseInt(id.replace('m',''));
+  return MODULES[idx].title;
+}
+function isUnlocked(id){
+  if(id==='intro') return true;
+  if(id.startsWith('m')){
+    const idx = parseInt(id.replace('m',''));
+    return state.unlocked[idx];
+  }
+  if(id==='final') return state.unlocked[4];
+  if(id==='resources') return true;
+  return false;
+}
+function isDone(id){
+  if(id==='intro') return state.unlocked[0] && localStorage.getItem('ils-intro-seen')==='1' && state.quizScores.some(s=>s!==null) || state.unlocked[1];
+  if(id.startsWith('m')){
+    const idx = parseInt(id.replace('m',''));
+    return state.quizSubmitted[idx] && state.quizScores[idx] !== null;
+  }
+  if(id==='final') return state.finalDone;
+  return false;
+}
+
+function renderSidebar(){
+  const sb = document.getElementById('sidebar');
+  let html = `<div class="nav-group-label">Course</div>`;
+  html += navItem('intro', 0, 'Introduction');
+  html += `<div class="nav-group-label">Modules</div>`;
+  MODULES.forEach((m,i)=> html += navItem('m'+i, i+1, m.title));
+  html += `<div class="nav-group-label">Wrap-up</div>`;
+  html += navItem('final', 5, 'Final Challenge');
+  html += navItem('resources', 6, 'Cheat Sheet & Resources');
+  sb.innerHTML = html;
+  sb.querySelectorAll('.nav-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.dataset.id;
+      if(!isUnlocked(id)) return;
+      goTo(id);
+    });
+  });
+  updateProgressBar();
+}
+function navItem(id, num, label){
+  const active = state.current===id ? 'active':'';
+  const locked = isUnlocked(id) ? '' : 'locked';
+  const done = isDone(id) ? 'done' : '';
+  return `<div class="nav-item ${active} ${locked} ${done}" data-id="${id}"><span class="num">${num}</span><span>${label}</span></div>`;
+}
+function updateProgressBar(){
+  const totalSteps = MODULES.length + 1; // 4 modules + final
+  let completed = 0;
+  state.quizSubmitted.forEach(s=>{ if(s) completed++; });
+  if(state.finalDone) completed++;
+  const pct = Math.round(completed/totalSteps*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressLabel').textContent = pct+'% complete';
+  document.getElementById('xpBadge').textContent = '★ '+state.xp+' XP';
+}
+function awardXP(n){ state.xp += n; }
+
+function goTo(id){
+  state.current = id;
+  saveState();
+  renderMain();
+  renderSidebar();
+  document.getElementById('main').scrollIntoView({behavior:'smooth'});
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderMain(){
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+  const sec = document.createElement('div');
+  sec.className = 'section active';
+  if(state.current==='intro') sec.innerHTML = introHTML();
+  else if(state.current==='final') sec.innerHTML = finalHTML();
+  else if(state.current==='resources') sec.innerHTML = resourcesHTML();
+  else{
+    const idx = parseInt(state.current.replace('m',''));
+    sec.innerHTML = moduleHTML(idx);
+  }
+  main.appendChild(sec);
+  wireFooterNav();
+  if(state.current.startsWith('m')){
+    const idx = parseInt(state.current.replace('m',''));
+    MODULES[idx].widget();
+    renderQuiz(idx);
+  }
+  if(state.current==='final' && state.unlocked[4]){
+    wireFinalChallenge();
+  }
+}
+
+function introHTML(){
+  localStorage.setItem('ils-intro-seen','1');
+  return `
+    <div class="hero-badge">📊 Data Science · Machine Learning · Regression</div>
+    <h1>Linear &amp; Polynomial Regression</h1>
+    <p class="lede">A complete, hands-on tutorial covering how machines learn to draw the best line (or curve) through data — from a single straight-line fit all the way to diagnosing overfitting and choosing the right model complexity for real-world use.</p>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="n">~65 min</div><div class="l">Estimated time</div></div>
+      <div class="stat-box"><div class="n">4</div><div class="l">Modules</div></div>
+      <div class="stat-box"><div class="n">16</div><div class="l">Quiz questions</div></div>
+      <div class="stat-box"><div class="n">1</div><div class="l">Final challenge</div></div>
+    </div>
+
+    <h3>Learning objectives</h3>
+    <ul class="obj-list">
+      <li>Explain how linear regression finds a best-fit line by minimizing Mean Squared Error.</li>
+      <li>Extend simple regression to multiple predictors and interpret coefficients correctly.</li>
+      <li>Diagnose assumption violations (heteroscedasticity, non-linearity, multicollinearity) from residual plots.</li>
+      <li>Use polynomial terms to model curved relationships, and recognize underfitting vs. overfitting.</li>
+      <li>Evaluate models honestly with train/test splits and metrics like R², RMSE, and MAE.</li>
+      <li>Select model complexity based on test performance, not training performance.</li>
+    </ul>
+
+    <h3>Prerequisites</h3>
+    <p>Comfort with basic algebra (equations of a line) and elementary statistics (mean, variance) is helpful. No prior machine learning experience required — every concept is built from first principles.</p>
+
+    <h3>Expected outcomes</h3>
+    <p>By the end, you'll be able to fit, diagnose, and evaluate both linear and polynomial regression models by hand-reasoning through the math, and you'll recognize the signs of a poorly specified or overfit model on sight.</p>
+
+    <h3>Reward system</h3>
+    <p style="margin-bottom:6px">Earn XP for every quiz you pass and a badge for every module you complete. Finish the final challenge to unlock your completion badge.</p>
+    <div class="reward-strip" id="rewardStrip"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="startBtn">Begin Module 1 →</button>
+    </div>
+  `;
+}
+function renderRewardStrip(){
+  const el = document.getElementById('rewardStrip');
+  if(!el) return;
+  const names = ['Line Fitter','Multi-Variable Mind','Curve Tamer','Model Evaluator','Regression Master'];
+  let html='';
+  MODULES.forEach((m,i)=>{
+    const earned = state.quizSubmitted[i] && state.quizScores[i]>=3;
+    html += `<div class="badge-slot ${earned?'earned':''}"><div class="ic">${earned?'🏅':'🔒'}</div><div class="nm">${names[i]}</div></div>`;
+  });
+  const finalEarned = state.finalDone;
+  html += `<div class="badge-slot ${finalEarned?'earned':''}"><div class="ic">${finalEarned?'🎓':'🔒'}</div><div class="nm">${names[4]}</div></div>`;
+  el.innerHTML = html;
+}
+
+function moduleHTML(idx){
+  const m = MODULES[idx];
+  return `
+    <div class="eyebrow">Module ${idx+1} of 4</div>
+    <h1>${m.title}</h1>
+    <p class="lede">${m.subtitle}</p>
+    ${m.html}
+    <h2>Module ${idx+1} Quiz</h2>
+    <p style="color:var(--muted)">Answer all four questions. You need at least 3 correct to unlock the next module.</p>
+    <div id="quiz-${idx}"></div>
+    <div class="section-footer">
+      <button class="btn" id="prevBtn">← Back</button>
+      <button class="btn btn-primary" id="nextBtn" disabled>Continue →</button>
+    </div>
+  `;
+}
+
+function renderQuiz(idx){
+  const container = document.getElementById('quiz-'+idx);
+  const quiz = MODULES[idx].quiz;
+  let html = '';
+  quiz.forEach((q,qi)=>{
+    html += `<div class="quiz-card">
+      <div class="quiz-q">${qi+1}. ${q.q}</div>
+      <div class="quiz-opts" data-qi="${qi}">
+        ${q.opts.map((opt,oi)=>`<div class="quiz-opt" data-oi="${oi}"><span class="letter">${String.fromCharCode(65+oi)}</span><span>${opt}</span></div>`).join('')}
+      </div>
+      <div class="quiz-explain" id="explain-${idx}-${qi}"></div>
+    </div>`;
+  });
+  html += `<div class="btn-row"><button class="btn btn-primary" id="submitQuiz${idx}">Submit answers</button></div>`;
+  html += `<div id="quizSummary${idx}"></div>`;
+  container.innerHTML = html;
+
+  container.querySelectorAll('.quiz-opts').forEach(group=>{
+    const qi = parseInt(group.dataset.qi);
+    group.querySelectorAll('.quiz-opt').forEach(opt=>{
+      opt.addEventListener('click', ()=>{
+        if(state.quizSubmitted[idx]) return;
+        group.querySelectorAll('.quiz-opt').forEach(o=>o.classList.remove('selected'));
+        opt.classList.add('selected');
+        state.quizAnswers[idx][qi] = parseInt(opt.dataset.oi);
+      });
+    });
+  });
+
+  document.getElementById('submitQuiz'+idx).addEventListener('click', ()=>{
+    const answers = state.quizAnswers[idx];
+    if(answers.some(a=>a===null)){
+      alert('Please answer all four questions before submitting.');
+      return;
+    }
+    let score = 0;
+    quiz.forEach((q,qi)=>{
+      const group = container.querySelector(`.quiz-opts[data-qi="${qi}"]`);
+      const opts = group.querySelectorAll('.quiz-opt');
+      opts.forEach((o,oi)=>{
+        o.style.pointerEvents='none';
+        if(oi===q.correct) o.classList.add('correct');
+        else if(oi===answers[qi]) o.classList.add('incorrect');
+      });
+      if(answers[qi]===q.correct) score++;
+      const ex = document.getElementById(`explain-${idx}-${qi}`);
+      ex.classList.add('show');
+      ex.innerHTML = `<strong>${answers[qi]===q.correct ? '✅ Correct.' : '❌ Not quite.'}</strong> ${q.explain}`;
+    });
+    state.quizScores[idx] = score;
+    state.quizSubmitted[idx] = true;
+    const passed = score>=3;
+    if(passed){
+      state.unlocked[idx+1] = true;
+      awardXP(50 + score*10);
+    }
+    saveState();
+    document.getElementById('submitQuiz'+idx).style.display='none';
+    document.getElementById('quizSummary'+idx).innerHTML = `
+      <div class="quiz-summary">
+        <div class="score">${score}/4</div>
+        <p>${passed ? 'Module passed! Next module unlocked.' : 'You need at least 3/4 to unlock the next module.'}</p>
+        ${!passed ? `<button class="btn" id="retryQuiz${idx}">Retry quiz</button>` : ''}
+      </div>
+    `;
+    if(!passed){
+      document.getElementById('retryQuiz'+idx).addEventListener('click', ()=>{
+        state.quizSubmitted[idx]=false;
+        state.quizAnswers[idx]=[null,null,null,null];
+        saveState();
+        renderQuiz(idx);
+      });
+    }
+    document.getElementById('nextBtn').disabled = !passed;
+    renderSidebar();
+  });
+
+  if(state.quizSubmitted[idx]){
+    // re-render already-submitted state
+    const answers = state.quizAnswers[idx];
+    quiz.forEach((q,qi)=>{
+      const group = container.querySelector(`.quiz-opts[data-qi="${qi}"]`);
+      const opts = group.querySelectorAll('.quiz-opt');
+      opts.forEach((o,oi)=>{
+        o.style.pointerEvents='none';
+        if(oi===q.correct) o.classList.add('correct');
+        else if(oi===answers[qi]) o.classList.add('incorrect');
+      });
+      const ex = document.getElementById(`explain-${idx}-${qi}`);
+      ex.classList.add('show');
+      ex.innerHTML = `<strong>${answers[qi]===q.correct ? '✅ Correct.' : '❌ Not quite.'}</strong> ${q.explain}`;
+    });
+    document.getElementById('submitQuiz'+idx).style.display='none';
+    const passed = state.quizScores[idx]>=3;
+    document.getElementById('quizSummary'+idx).innerHTML = `
+      <div class="quiz-summary">
+        <div class="score">${state.quizScores[idx]}/4</div>
+        <p>${passed ? 'Module passed! Next module unlocked.' : 'You need at least 3/4 to unlock the next module.'}</p>
+        ${!passed ? `<button class="btn" id="retryQuiz${idx}">Retry quiz</button>` : ''}
+      </div>
+    `;
+    if(!passed){
+      document.getElementById('retryQuiz'+idx).addEventListener('click', ()=>{
+        state.quizSubmitted[idx]=false;
+        state.quizAnswers[idx]=[null,null,null,null];
+        saveState();
+        renderQuiz(idx);
+      });
+    }
+    document.getElementById('nextBtn').disabled = !passed;
+  }
+}
+
+function finalHTML(){
+  if(!state.unlocked[4]){
+    return `<h1>Final Challenge</h1><p class="lede">Complete all four modules with a passing quiz score to unlock the final challenge.</p>`;
+  }
+  return `
+    <div class="eyebrow">Capstone</div>
+    <h1>Final Practical Challenge</h1>
+    ${renderFinalChallenge()}
+    <div class="section-footer">
+      <button class="btn" id="prevBtn">← Back</button>
+      <button class="btn btn-primary" id="nextBtn">Cheat Sheet &amp; Resources →</button>
+    </div>
+  `;
+}
+
+function resourcesHTML(){
+  return `
+    <div class="eyebrow">Reference</div>
+    <h1>Cheat Sheet, Summary &amp; Continued Learning</h1>
+    <p class="lede">Everything on this page is designed to be printed or saved as your permanent reference notes (use the print icon in the top bar).</p>
+    <h2>Cheat sheet</h2>
+    ${CHEAT_SHEET}
+    <h2>Summary notes</h2>
+    <div class="card">
+      <p>Linear regression fits <code>ŷ = b₀ + Σbᵢxᵢ</code> by minimizing MSE. Multiple predictors require checking linearity, independence, homoscedasticity, normal residuals, and low multicollinearity. Polynomial regression adds power terms to model curvature while remaining linear in its coefficients — but higher degree trades bias for variance, risking overfitting. Always select model complexity using held-out test performance (R², RMSE, MAE via train/test split or cross-validation), never training performance alone. Regularization (Ridge/Lasso) offers an automatic alternative to manual degree selection.</p>
+    </div>
+    <h2>Continue learning</h2>
+    ${RESOURCES}
+    <div class="section-footer">
+      <button class="btn" id="prevBtn">← Back to Final Challenge</button>
+      <button class="btn btn-primary" id="restartBtn">Restart course</button>
+    </div>
+  `;
+}
+
+function wireFooterNav(){
+  const prev = document.getElementById('prevBtn');
+  const next = document.getElementById('nextBtn');
+  const start = document.getElementById('startBtn');
+  const restart = document.getElementById('restartBtn');
+  if(prev) prev.addEventListener('click', ()=>{
+    const i = SECTIONS.indexOf(state.current);
+    if(i>0) goTo(SECTIONS[i-1]);
+  });
+  if(next) next.addEventListener('click', ()=>{
+    const i = SECTIONS.indexOf(state.current);
+    if(i<SECTIONS.length-1 && isUnlocked(SECTIONS[i+1])) goTo(SECTIONS[i+1]);
+  });
+  if(start) start.addEventListener('click', ()=> goTo('m0'));
+  if(restart) restart.addEventListener('click', ()=>{
+    if(confirm('This will reset all progress. Continue?')){
+      localStorage.removeItem('ils-regression-state');
+      location.reload();
+    }
+  });
+  renderRewardStrip();
+  // fix module nextBtn enabling on revisits
+  if(state.current.startsWith('m')){
+    const idx = parseInt(state.current.replace('m',''));
+    const nb = document.getElementById('nextBtn');
+    if(nb && state.quizSubmitted[idx] && state.quizScores[idx]>=3) nb.disabled=false;
+  }
+}
+
+/* =========================================================
+   THEME + PRINT
+   ========================================================= */
+function initTheme(){
+  const saved = localStorage.getItem('ils-theme');
+  if(saved==='light') document.documentElement.classList.add('light');
+  document.getElementById('themeBtn').addEventListener('click', ()=>{
+    document.documentElement.classList.toggle('light');
+    localStorage.setItem('ils-theme', document.documentElement.classList.contains('light')?'light':'dark');
+  });
+  document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+loadState();
+initTheme();
+renderSidebar();
+renderMain();
+</script>
+</body>
+</html>
