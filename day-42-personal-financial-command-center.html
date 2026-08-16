@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 42 — The Ledger — Financial Command Center</title>
+<style>
+/* ============================= TOKENS ============================= */
+:root{
+  --ink:#0F1416; --ink-soft:#151C1F; --panel:#1A2226; --panel-2:#202A2F;
+  --paper:#F3F0E7; --paper-panel:#FFFFFF; --paper-panel2:#FBF9F3;
+  --text-hi:#ECEAE2; --text-mid:#A6B0B3; --text-low:#697477;
+  --text-hi-l:#1B211F; --text-mid-l:#5B615C; --text-low-l:#8A9089;
+  --line:rgba(236,234,226,0.09); --line-l:rgba(27,33,31,0.10);
+  --biz:#2FA593; --biz-dim:#1E6F63; --biz-soft:rgba(47,165,147,0.14);
+  --per:#8B7FD1; --per-dim:#6B5CA0; --per-soft:rgba(139,127,209,0.14);
+  --danger:#D96455; --danger-soft:rgba(217,100,85,0.14);
+  --warn:#D9A94E; --warn-soft:rgba(217,169,78,0.14);
+  --good:#6FBF8B; --good-soft:rgba(111,191,139,0.14);
+  --accent:var(--biz); --accent-dim:var(--biz-dim); --accent-soft:var(--biz-soft);
+  --font-display:'Iowan Old Style','Palatino Linotype','Book Antiqua',Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
+  --font-mono:'SF Mono','JetBrains Mono',ui-monospace,'Courier New',monospace;
+  --radius:10px; --shadow:0 8px 28px rgba(0,0,0,0.35);
+}
+body[data-theme="light"]{
+  --ink:var(--paper); --ink-soft:#EDEAE0; --panel:var(--paper-panel); --panel-2:var(--paper-panel2);
+  --text-hi:var(--text-hi-l); --text-mid:var(--text-mid-l); --text-low:var(--text-low-l);
+  --line:var(--line-l); --shadow:0 8px 24px rgba(27,33,31,0.10);
+}
+body[data-context="personal"]{ --accent:var(--per); --accent-dim:var(--per-dim); --accent-soft:var(--per-soft); }
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--ink); color:var(--text-hi); font-family:var(--font-body);
+  min-height:100vh; transition:background .4s ease,color .4s ease;
+}
+::selection{background:var(--accent); color:var(--ink);}
+::-webkit-scrollbar{width:9px; height:9px;}
+::-webkit-scrollbar-thumb{background:var(--panel-2); border-radius:6px;}
+a{color:var(--accent);}
+button{font-family:inherit; cursor:pointer;}
+input,select{font-family:inherit;}
+@media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+
+/* ============================= LAYOUT ============================= */
+.app{display:grid; grid-template-columns:248px 1fr; min-height:100vh;}
+.sidebar{
+  background:var(--ink-soft); border-right:1px solid var(--line);
+  position:sticky; top:0; height:100vh; display:flex; flex-direction:column;
+  padding:22px 16px; transition:background .4s ease,border-color .4s ease;
+}
+.brand{display:flex; align-items:center; gap:10px; padding:6px 8px 22px; border-bottom:1px solid var(--line); margin-bottom:14px;}
+.brand-mark{
+  width:34px; height:34px; border-radius:8px; background:linear-gradient(150deg,var(--accent),var(--accent-dim));
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:17px; color:var(--ink); flex-shrink:0;
+  transition:background .4s ease;
+}
+.brand-text .t1{font-family:var(--font-display); font-size:16px; font-weight:600; letter-spacing:.2px;}
+.brand-text .t2{font-size:10.5px; color:var(--text-low); letter-spacing:1.6px; text-transform:uppercase;}
+.day-badge{margin-left:auto; font-family:var(--font-mono); font-size:10px; letter-spacing:.6px; color:var(--accent); background:var(--accent-soft); border:1px solid var(--line); padding:3px 8px; border-radius:5px; white-space:nowrap; transition:color .3s,background .3s;}
+nav.navlist{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:2px; padding-top:6px;}
+.navlist button{
+  all:unset; display:flex; align-items:center; gap:12px; padding:10px 10px; border-radius:8px; cursor:pointer;
+  color:var(--text-mid); font-size:13.2px; transition:background .18s, color .18s;
+}
+.navlist button .num{font-family:var(--font-mono); font-size:10.5px; color:var(--text-low); width:18px; flex-shrink:0;}
+.navlist button:hover{background:var(--panel); color:var(--text-hi);}
+.navlist button.active{background:var(--accent-soft); color:var(--text-hi); font-weight:600;}
+.navlist button.active .num{color:var(--accent);}
+.sidebar-foot{padding-top:14px; border-top:1px solid var(--line); margin-top:10px;}
+.theme-toggle{
+  all:unset; display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:8px; color:var(--text-mid); font-size:12.5px; cursor:pointer; width:100%;
+}
+.theme-toggle:hover{background:var(--panel); color:var(--text-hi);}
+
+main{padding:26px 34px 80px; max-width:1180px; width:100%;}
+.topbar{display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:26px; flex-wrap:wrap;}
+.topbar h1{font-family:var(--font-display); font-size:26px; font-weight:600;}
+.topbar .sub{font-size:12.5px; color:var(--text-low); margin-top:3px;}
+
+/* Ledger Switch — signature element */
+.ledger-switch{
+  display:flex; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px; gap:2px; position:relative;
+}
+.ledger-switch button{
+  all:unset; padding:8px 18px; border-radius:999px; font-size:12.5px; font-weight:600; letter-spacing:.4px; color:var(--text-low); position:relative; z-index:2; cursor:pointer; transition:color .3s;
+}
+.ledger-switch button.active{color:var(--ink);}
+.ledger-thumb{
+  position:absolute; top:4px; bottom:4px; left:4px; width:calc(50% - 4px); border-radius:999px; background:var(--accent);
+  transition:transform .35s cubic-bezier(.65,0,.35,1), background .35s ease; z-index:1;
+}
+body[data-context="personal"] .ledger-thumb{transform:translateX(100%);}
+
+.view{display:none; animation:pageturn .5s cubic-bezier(.2,.7,.3,1);}
+.view.active{display:block;}
+@keyframes pageturn{ from{opacity:0; transform:perspective(900px) rotateX(3deg) translateY(8px);} to{opacity:1; transform:none;} }
+
+/* ============================= CARDS / GRID ============================= */
+.grid{display:grid; gap:16px;}
+.g4{grid-template-columns:repeat(4,1fr);} .g3{grid-template-columns:repeat(3,1fr);}
+.g2{grid-template-columns:repeat(2,1fr);} .g5{grid-template-columns:1.3fr 1fr;}
+@media(max-width:980px){ .g4,.g3,.g2,.g5{grid-template-columns:1fr;} .app{grid-template-columns:1fr;} .sidebar{position:relative; height:auto;} }
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;
+  transition:background .4s ease, border-color .4s ease, transform .2s ease; position:relative; overflow:hidden;
+}
+.card:hover{transform:translateY(-1px);}
+.card h3{font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-low); font-weight:600; margin-bottom:10px;}
+.stat-num{font-family:var(--font-display); font-size:30px; font-weight:600; line-height:1.1;}
+.stat-num.mono{font-family:var(--font-mono); font-weight:600;}
+.stat-delta{font-size:12px; margin-top:6px; display:flex; align-items:center; gap:5px;}
+.up{color:var(--good);} .down{color:var(--danger);} .flat{color:var(--text-low);}
+.card-foot{font-size:11.5px; color:var(--text-low); margin-top:8px;}
+
+.section-title{display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 14px;}
+.section-title h2{font-family:var(--font-display); font-size:19px; font-weight:600;}
+.section-title .eyebrow{font-size:10.5px; letter-spacing:1.6px; text-transform:uppercase; color:var(--accent); margin-bottom:3px; display:block;}
+
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:var(--text-low); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line);}
+td{padding:10px; border-bottom:1px solid var(--line); color:var(--text-hi);}
+tr:last-child td{border-bottom:none;}
+td.num,th.num{text-align:right; font-family:var(--font-mono);}
+.tag{display:inline-block; padding:3px 9px; border-radius:5px; font-size:10.5px; font-weight:600;}
+.tag.biz{background:var(--biz-soft); color:var(--biz);}
+.tag.per{background:var(--per-soft); color:var(--per);}
+.tag.danger{background:var(--danger-soft); color:var(--danger);}
+.tag.warn{background:var(--warn-soft); color:var(--warn);}
+.tag.good{background:var(--good-soft); color:var(--good);}
+
+.btn{
+  all:unset; background:var(--accent); color:var(--ink); font-weight:700; font-size:12.5px; padding:9px 16px;
+  border-radius:7px; cursor:pointer; transition:filter .15s, background .3s ease; display:inline-flex; align-items:center; gap:6px;
+}
+.btn:hover{filter:brightness(1.1);}
+.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--text-hi);}
+.btn.small{padding:6px 11px; font-size:11.5px;}
+.btn.danger-btn{background:var(--danger); color:#fff;}
+
+.formrow{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:12px;}
+.field label{display:block; font-size:10.5px; color:var(--text-low); text-transform:uppercase; letter-spacing:.8px; margin-bottom:5px;}
+.field input,.field select{
+  width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text-hi); padding:8px 10px; border-radius:6px; font-size:13px;
+  transition:border-color .2s;
+}
+.field input:focus,.field select:focus{outline:none; border-color:var(--accent);}
+
+.progress-track{height:8px; border-radius:5px; background:var(--panel-2); overflow:hidden; margin-top:8px;}
+.progress-fill{height:100%; border-radius:5px; background:var(--accent); transition:width .6s cubic-bezier(.2,.7,.3,1), background .3s;}
+
+.canvas-wrap{width:100%; position:relative;}
+canvas{width:100%; display:block;}
+
+.list-clean{list-style:none;}
+.list-clean li{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line); font-size:13px;}
+.list-clean li:last-child{border-bottom:none;}
+
+.checklist label{display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px; cursor:pointer;}
+.checklist label:last-child{border-bottom:none;}
+.checklist input{margin-top:3px; accent-color:var(--accent);}
+.checklist span.done{text-decoration:line-through; color:var(--text-low);}
+
+.slider-row{margin-bottom:20px;}
+.slider-row .lbl{display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-mid); margin-bottom:8px;}
+.slider-row .lbl b{color:var(--text-hi); font-family:var(--font-mono);}
+input[type=range]{width:100%; accent-color:var(--accent); height:5px;}
+
+.gauge-wrap{display:flex; flex-direction:column; align-items:center; padding:8px 0 0;}
+.gauge-label{font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-low); margin-top:-58px;}
+.gauge-score{font-family:var(--font-display); font-size:44px; font-weight:700; margin-top:-8px;}
+.gauge-verdict{font-size:12.5px; margin-top:2px; font-weight:600;}
+
+.tip-card{background:var(--panel-2); border-left:3px solid var(--accent); border-radius:6px; padding:14px 16px; font-size:13px; line-height:1.5;}
+.pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;}
+.pill{background:var(--panel-2); border:1px solid var(--line); font-size:11px; padding:5px 11px; border-radius:999px; color:var(--text-mid);}
+
+.res-links a{display:block; font-size:13px; padding:9px 0; border-bottom:1px solid var(--line);}
+.res-links a:last-child{border-bottom:none;}
+
+.hero-score-card{display:flex; align-items:center; gap:28px; flex-wrap:wrap;}
+.ai-box{background:var(--panel-2); border-radius:8px; padding:14px 16px; font-size:13px; line-height:1.55; border:1px solid var(--line); margin-top:10px;}
+.ai-box b{color:var(--accent);}
+
+.empty{color:var(--text-low); font-size:12.5px; padding:14px 0; text-align:center;}
+
+/* print */
+@media print{
+  .sidebar,.topbar .ledger-switch,.no-print{display:none !important;}
+  .app{display:block;}
+  main{padding:0; max-width:100%;}
+  body{background:#fff; color:#000;}
+  .view{display:none !important;}
+  .view.print-active{display:block !important;}
+  .card{border:1px solid #ccc; break-inside:avoid;}
+}
+</style>
+</head>
+<body data-theme="dark" data-context="business">
+
+<div class="app">
+  <!-- ============================= SIDEBAR ============================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-text">
+        <div class="t1">The Ledger</div>
+        <div class="t2">Command Center</div>
+      </div>
+      <div class="day-badge">DAY 42</div>
+    </div>
+    <nav class="navlist" id="navlist">
+      <button data-view="overview" class="active"><span class="num">01</span>Overview</button>
+      <button data-view="income"><span class="num">02</span>Income &amp; Expenses</button>
+      <button data-view="debt"><span class="num">03</span>Debt &amp; Loans</button>
+      <button data-view="cashflow"><span class="num">04</span>Cash Flow</button>
+      <button data-view="reserves"><span class="num">05</span>Reserves &amp; Investing</button>
+      <button data-view="budgets"><span class="num">06</span>Budgets</button>
+      <button data-view="team"><span class="num">07</span>Team &amp; Subscriptions</button>
+      <button data-view="goals"><span class="num">08</span>Goals</button>
+      <button data-view="simulator"><span class="num">09</span>What-If Simulator</button>
+      <button data-view="reports"><span class="num">10</span>Reports &amp; Tips</button>
+    </nav>
+    <div class="sidebar-foot">
+      <button class="theme-toggle" id="themeToggle">🌙 <span>Switch to light mode</span></button>
+      <button class="theme-toggle no-print" onclick="window.print()">🖨️ <span>Print report</span></button>
+    </div>
+  </aside>
+
+  <!-- ============================= MAIN ============================= -->
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Overview</h1>
+        <div class="sub" id="pageSub">Where your business and personal finances stand today.</div>
+      </div>
+      <div class="ledger-switch no-print">
+        <div class="ledger-thumb"></div>
+        <button data-ctx="business" class="active">BUSINESS</button>
+        <button data-ctx="personal">PERSONAL</button>
+      </div>
+    </div>
+
+    <!-- ============ 01 OVERVIEW ============ -->
+    <section class="view active" id="view-overview">
+      <div class="grid g5">
+        <div class="card hero-score-card">
+          <div class="gauge-wrap">
+            <canvas id="gaugeCanvas" width="220" height="130"></canvas>
+            <div class="gauge-label">Financial Health Score</div>
+            <div class="gauge-score" id="healthScoreNum">—</div>
+            <div class="gauge-verdict" id="healthVerdict">—</div>
+          </div>
+          <div style="flex:1; min-width:220px;">
+            <h3 style="margin-bottom:8px;">What's driving this score</h3>
+            <ul class="list-clean" id="scoreDrivers"></ul>
+          </div>
+        </div>
+        <div class="card">
+          <h3>AI Reading</h3>
+          <div class="ai-box" id="aiOverviewBox">Analyzing your ledger…</div>
+        </div>
+      </div>
+
+      <div class="section-title"><div><span class="eyebrow" id="ctxLabelOverview">Business</span><h2>This month at a glance</h2></div></div>
+      <div class="grid g4" id="overviewStats"></div>
+
+      <div class="section-title"><div><span class="eyebrow">Trend</span><h2>Net cash flow — last 6 months</h2></div></div>
+      <div class="card"><div class="canvas-wrap"><canvas id="overviewTrendChart" height="220"></canvas></div></div>
+    </section>
+
+    <!-- ============ 02 INCOME & EXPENSES ============ -->
+    <section class="view" id="view-income">
+      <div class="grid g3">
+        <div class="card"><h3>Total Income</h3><div class="stat-num mono" id="incTotalIncome">—</div><div class="card-foot">This month</div></div>
+        <div class="card"><h3>Total Expenses</h3><div class="stat-num mono" id="incTotalExpense">—</div><div class="card-foot">This month</div></div>
+        <div class="card"><h3>Net Margin</h3><div class="stat-num mono" id="incNetMargin">—</div><div class="card-foot" id="incNetMarginFoot">Income minus expenses</div></div>
+      </div>
+
+      <div class="section-title"><h2>Expense breakdown</h2></div>
+      <div class="grid g2">
+        <div class="card"><div class="canvas-wrap"><canvas id="expenseDonut" height="230"></canvas></div></div>
+        <div class="card">
+          <h3>By category</h3>
+          <ul class="list-clean" id="expenseCatList"></ul>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h2>Income sources</h2>
+        <button class="btn small" onclick="openForm('income')">+ Add income</button>
+      </div>
+      <div class="card"><table><thead><tr><th>Source</th><th>Category</th><th class="num">Monthly Amount</th><th></th></tr></thead><tbody id="incomeTable"></tbody></table></div>
+
+      <div class="section-title">
+        <h2>Expenses</h2>
+        <button class="btn small" onclick="openForm('expense')">+ Add expense</button>
+      </div>
+      <div class="card"><table><thead><tr><th>Item</th><th>Category</th><th class="num">Monthly Amount</th><th></th></tr></thead><tbody id="expenseTable"></tbody></table></div>
+    </section>
+
+    <!-- ============ 03 DEBT & LOANS ============ -->
+    <section class="view" id="view-debt">
+      <div class="grid g3">
+        <div class="card"><h3>Total Debt Outstanding</h3><div class="stat-num mono" id="debtTotal">—</div><div class="card-foot" id="debtCount">— open balances</div></div>
+        <div class="card"><h3>Monthly Debt Service</h3><div class="stat-num mono" id="debtMonthly">—</div><div class="card-foot">Across all loans</div></div>
+        <div class="card"><h3>Debt-to-Income</h3><div class="stat-num mono" id="debtRatio">—</div><div class="card-foot" id="debtRatioFoot">Of monthly income</div></div>
+      </div>
+
+      <div class="section-title">
+        <h2>Open loans &amp; balances</h2>
+        <button class="btn small" onclick="openForm('debt')">+ Add loan</button>
+      </div>
+      <div class="card"><table><thead><tr><th>Loan</th><th>Rate</th><th class="num">Balance</th><th class="num">Min. Payment</th><th></th></tr></thead><tbody id="debtTable"></tbody></table></div>
+
+      <div class="section-title"><div><span class="eyebrow">Calculator</span><h2>Debt payoff planner</h2></div></div>
+      <div class="grid g5">
+        <div class="card">
+          <div class="slider-row">
+            <div class="lbl">Extra monthly payment <b id="extraPayVal">$0</b></div>
+            <input type="range" id="extraPaySlider" min="0" max="5000" step="50" value="0">
+          </div>
+          <div id="payoffSummary" class="ai-box"></div>
+        </div>
+        <div class="card"><div class="canvas-wrap"><canvas id="payoffChart" height="230"></canvas></div></div>
+      </div>
+    </section>
+
+    <!-- ============ 04 CASH FLOW ============ -->
+    <section class="view" id="view-cashflow">
+      <div class="grid g3">
+        <div class="card"><h3>Monthly Burn / Surplus</h3><div class="stat-num mono" id="cfBurn">—</div><div class="card-foot">Income minus all outflows</div></div>
+        <div class="card"><h3>Cash Runway</h3><div class="stat-num mono" id="cfRunway">—</div><div class="card-foot">At current reserves &amp; burn rate</div></div>
+        <div class="card"><h3>12-mo Projected Cash</h3><div class="stat-num mono" id="cfProjected">—</div><div class="card-foot">If trends hold</div></div>
+      </div>
+      <div class="section-title"><h2>12-month cash flow projection</h2></div>
+      <div class="card"><div class="canvas-wrap"><canvas id="cashflowChart" height="240"></canvas></div></div>
+      <div class="ai-box" id="cashflowAI" style="margin-top:16px;"></div>
+    </section>
+
+    <!-- ============ 05 RESERVES & INVESTING ============ -->
+    <section class="view" id="view-reserves">
+      <div class="grid g3">
+        <div class="card"><h3>Total Reserves</h3><div class="stat-num mono" id="resTotal">—</div><div class="card-foot" id="resFoot">Cash + investments</div></div>
+        <div class="card"><h3>Monthly Contribution</h3><div class="stat-num mono" id="resMonthly">—</div><div class="card-foot">Being set aside</div></div>
+        <div class="card"><h3>Growth (12mo, projected)</h3><div class="stat-num mono" id="resGrowth">—</div><div class="card-foot">At current pace + est. return</div></div>
+      </div>
+      <div class="grid g2">
+        <div class="card"><h3>Allocation</h3><div class="canvas-wrap"><canvas id="reserveDonut" height="230"></canvas></div></div>
+        <div class="card">
+          <h3>Reserve growth trajectory</h3>
+          <div class="canvas-wrap"><canvas id="reserveLineChart" height="230"></canvas></div>
+        </div>
+      </div>
+      <div class="section-title">
+        <h2>Accounts &amp; holdings</h2>
+        <button class="btn small" onclick="openForm('reserve')">+ Add account</button>
+      </div>
+      <div class="card"><table><thead><tr><th>Account</th><th>Type</th><th class="num">Balance</th><th></th></tr></thead><tbody id="reserveTable"></tbody></table></div>
+    </section>
+
+    <!-- ============ 06 BUDGETS ============ -->
+    <section class="view" id="view-budgets">
+      <div class="section-title">
+        <h2>Budget vs. actual — this month</h2>
+        <button class="btn small" onclick="openForm('budget')">+ Add budget line</button>
+      </div>
+      <div id="budgetList" class="grid g2"></div>
+    </section>
+
+    <!-- ============ 07 TEAM & SUBSCRIPTIONS ============ -->
+    <section class="view" id="view-team">
+      <div id="teamOnlyBiz">
+        <div class="grid g3">
+          <div class="card"><h3>Headcount</h3><div class="stat-num mono" id="teamCount">—</div><div class="card-foot">Active team members</div></div>
+          <div class="card"><h3>Monthly Payroll</h3><div class="stat-num mono" id="teamPayroll">—</div><div class="card-foot">Fully loaded cost</div></div>
+          <div class="card"><h3>Payroll % of Revenue</h3><div class="stat-num mono" id="teamPayrollPct">—</div><div class="card-foot" id="teamPayrollFoot">Healthy range: 30–50%</div></div>
+        </div>
+        <div class="section-title">
+          <h2>Team roster</h2>
+          <button class="btn small" onclick="openForm('team')">+ Add team member</button>
+        </div>
+        <div class="card"><table><thead><tr><th>Role</th><th class="num">Monthly Cost</th><th></th></tr></thead><tbody id="teamTable"></tbody></table></div>
+      </div>
+
+      <div class="section-title">
+        <h2 id="subsHeading">Recurring subscriptions</h2>
+        <button class="btn small" onclick="openForm('subscription')">+ Add subscription</button>
+      </div>
+      <div class="grid g3" style="margin-bottom:16px;">
+        <div class="card"><h3>Monthly Total</h3><div class="stat-num mono" id="subMonthlyTotal">—</div></div>
+        <div class="card"><h3>Annualized Cost</h3><div class="stat-num mono" id="subAnnualTotal">—</div></div>
+        <div class="card"><h3>Active Subscriptions</h3><div class="stat-num mono" id="subCount">—</div></div>
+      </div>
+      <div class="card"><table><thead><tr><th>Service</th><th>Category</th><th class="num">Monthly</th><th></th></tr></thead><tbody id="subTable"></tbody></table></div>
+    </section>
+
+    <!-- ============ 08 GOALS ============ -->
+    <section class="view" id="view-goals">
+      <div class="section-title">
+        <h2>Goals in progress</h2>
+        <button class="btn small" onclick="openForm('goal')">+ Add goal</button>
+      </div>
+      <div class="grid g3" id="goalsGrid"></div>
+    </section>
+
+    <!-- ============ 09 SIMULATOR ============ -->
+    <section class="view" id="view-simulator">
+      <div class="section-title"><div><span class="eyebrow">What-if</span><h2>Model a decision before you make it</h2></div></div>
+      <div class="grid g5">
+        <div class="card">
+          <div class="slider-row">
+            <div class="lbl">Revenue growth (annual) <b id="simRevVal">0%</b></div>
+            <input type="range" id="simRev" min="-20" max="50" step="1" value="8">
+          </div>
+          <div class="slider-row">
+            <div class="lbl">Extra debt payment / month <b id="simDebtVal">$0</b></div>
+            <input type="range" id="simDebt" min="0" max="5000" step="50" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="lbl">New hire monthly cost <b id="simHireVal">$0</b></div>
+            <input type="range" id="simHire" min="0" max="12000" step="250" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="lbl">Reserve contribution / month <b id="simReserveVal">$0</b></div>
+            <input type="range" id="simReserve" min="0" max="5000" step="50" value="0">
+          </div>
+          <button class="btn ghost small" id="simReset">Reset sliders</button>
+        </div>
+        <div class="card">
+          <h3>Projected impact, 12 months out</h3>
+          <div class="canvas-wrap"><canvas id="simChart" height="220"></canvas></div>
+          <div class="ai-box" id="simAI" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 10 REPORTS & TIPS ============ -->
+    <section class="view" id="view-reports">
+      <div class="section-title"><div><span class="eyebrow">Printable</span><h2>Financial summary report</h2></div></div>
+      <div class="card" id="reportCard">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div>
+            <div style="font-family:var(--font-display); font-size:18px; font-weight:600;" id="reportTitle">Business Ledger Summary</div>
+            <div style="font-size:11.5px; color:var(--text-low);" id="reportDate"></div>
+          </div>
+          <button class="btn no-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+        </div>
+        <div class="grid g4" id="reportStats"></div>
+        <p style="font-size:12.5px; color:var(--text-low); margin-top:14px;">Generated by The Ledger · Day 42 build — figures reflect data currently stored in this browser.</p>
+      </div>
+
+      <div class="section-title"><h2>Financial health checklist</h2></div>
+      <div class="card checklist" id="checklistCard"></div>
+
+      <div class="section-title"><h2>Tips, tuned to your situation</h2></div>
+      <div class="grid g2" id="tipsGrid"></div>
+
+      <div class="section-title"><h2>Ask yourself (AI prompts to explore)</h2></div>
+      <div class="card">
+        <div class="pill-row" id="aiPrompts"></div>
+      </div>
+
+      <div class="section-title"><h2>Resources</h2></div>
+      <div class="card res-links" id="resourceLinks"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================= MODAL FORM ============================= -->
+<div id="modalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:50; align-items:center; justify-content:center;">
+  <div style="background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:24px; width:92%; max-width:420px; box-shadow:var(--shadow);">
+    <h3 id="modalTitle" style="font-family:var(--font-display); font-size:17px; margin-bottom:16px;">Add entry</h3>
+    <div id="modalBody"></div>
+    <div style="display:flex; gap:10px; margin-top:6px;">
+      <button class="btn" id="modalSave">Save</button>
+      <button class="btn ghost" onclick="closeForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================================================================
+   DATA MODEL
+====================================================================== */
+const DEFAULT_DATA = {
+  business: {
+    income: [
+      {name:"Retainer clients", cat:"Services", amt:24000},
+      {name:"Product sales", cat:"Product", amt:9500},
+      {name:"One-off projects", cat:"Services", amt:4200},
+    ],
+    expenses: [
+      {name:"Payroll", cat:"Team", amt:16800},
+      {name:"Office rent", cat:"Facilities", amt:3200},
+      {name:"Software & tools", cat:"Operations", amt:1450},
+      {name:"Marketing", cat:"Growth", amt:2100},
+      {name:"Contractors", cat:"Operations", amt:1800},
+      {name:"Insurance", cat:"Admin", amt:620},
+    ],
+    debts: [
+      {name:"SBA 7(a) loan", rate:7.2, balance:118000, minPay:2450},
+      {name:"Equipment financing", rate:9.8, balance:34500, minPay:980},
+      {name:"Business credit line", rate:13.5, balance:21200, minPay:650},
+    ],
+    reserves: [
+      {name:"Business savings", type:"Cash", balance:38000},
+      {name:"Money market", type:"Cash equiv.", balance:15000},
+      {name:"Brokerage (growth)", type:"Investment", balance:9600},
+    ],
+    reserveMonthly: 1400,
+    team: [
+      {role:"Operations Manager", cost:6200},
+      {role:"Senior Designer", cost:5800},
+      {role:"Account Executive", cost:5400},
+      {role:"Support Specialist", cost:3900},
+      {role:"Contract Developer", cost:3200},
+    ],
+    subscriptions: [
+      {name:"Project management suite", cat:"Ops", amt:89},
+      {name:"Design tools", cat:"Creative", amt:54},
+      {name:"CRM", cat:"Sales", amt:149},
+      {name:"Accounting software", cat:"Finance", amt:70},
+      {name:"Cloud hosting", cat:"Infra", amt:210},
+    ],
+    budgets: [
+      {cat:"Payroll", cap:17000, spent:16800},
+      {cat:"Marketing", cap:2500, spent:2100},
+      {cat:"Operations", cap:3000, spent:3250},
+      {cat:"Facilities", cap:3200, spent:3200},
+    ],
+    goals: [
+      {name:"Pay off business credit line", target:21200, current:6000, due:"2027-06"},
+      {name:"Build 6-month operating reserve", target:126000, current:62600, due:"2027-12"},
+      {name:"Fund new hire ramp-up", target:15000, current:4000, due:"2027-03"},
+    ],
+    trend:[-1200,2400,1800,3100,2600,3400],
+  },
+  personal: {
+    income: [
+      {name:"Owner's draw", cat:"Salary", amt:6500},
+      {name:"Rental income", cat:"Passive", amt:900},
+    ],
+    expenses: [
+      {name:"Mortgage / rent", cat:"Housing", amt:2400},
+      {name:"Utilities", cat:"Housing", amt:280},
+      {name:"Groceries", cat:"Living", amt:650},
+      {name:"Auto loan", cat:"Transport", amt:410},
+      {name:"Insurance", cat:"Admin", amt:320},
+      {name:"Dining & leisure", cat:"Lifestyle", amt:480},
+    ],
+    debts: [
+      {name:"Auto loan", rate:6.4, balance:14200, minPay:410},
+      {name:"Credit card", rate:21.9, balance:5800, minPay:220},
+    ],
+    reserves: [
+      {name:"Emergency fund", type:"Cash", balance:12500},
+      {name:"Roth IRA", type:"Investment", balance:31200},
+      {name:"Brokerage", type:"Investment", balance:18400},
+    ],
+    reserveMonthly: 600,
+    team: [],
+    subscriptions: [
+      {name:"Streaming bundle", cat:"Entertainment", amt:32},
+      {name:"Gym membership", cat:"Health", amt:55},
+      {name:"Cloud storage", cat:"Personal tech", amt:10},
+    ],
+    budgets: [
+      {cat:"Housing", cap:2700, spent:2680},
+      {cat:"Living", cap:700, spent:650},
+      {cat:"Lifestyle", cap:450, spent:480},
+    ],
+    goals: [
+      {name:"Payoff credit card", target:5800, current:1400, due:"2026-12"},
+      {name:"Emergency fund → 6 months", target:19000, current:12500, due:"2027-05"},
+    ],
+    trend:[420,610,380,720,540,690],
+  }
+};
+
+let DATA = loadData();
+let CTX = "business"; // business | personal
+let THEME = "dark";
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem("pfcc_data_v1");
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+function saveData(){ localStorage.setItem("pfcc_data_v1", JSON.stringify(DATA)); }
+function money(n, decimals){
+  const d = decimals===undefined?0:decimals;
+  const sign = n<0 ? "-" : "";
+  return sign + "$" + Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d, maximumFractionDigits:d});
+}
+function sum(arr, key){ return arr.reduce((a,b)=>a+(b[key]||0),0); }
+function d(){ return DATA[CTX]; }
+
+/* ======================================================================
+   NAVIGATION
+====================================================================== */
+const titles = {
+  overview:["Overview","Where your business and personal finances stand today."],
+  income:["Income & Expenses","Every dollar in, every dollar out."],
+  debt:["Debt & Loans","What you owe, and the fastest way out."],
+  cashflow:["Cash Flow","Burn rate, runway, and the road ahead."],
+  reserves:["Reserves & Investing","Cash cushion and long-term growth."],
+  budgets:["Budgets","Plan vs. reality, category by category."],
+  team:["Team & Subscriptions","Payroll, tools, and recurring costs."],
+  goals:["Goals","The milestones you're funding."],
+  simulator:["What-If Simulator","Model a decision before you make it."],
+  reports:["Reports & Tips","Print-ready summaries and next moves."]
+};
+document.getElementById("navlist").addEventListener("click", e=>{
+  const btn = e.target.closest("button"); if(!btn) return;
+  document.querySelectorAll(".navlist button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  const view = btn.dataset.view;
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+view).classList.add("active");
+  document.getElementById("pageTitle").textContent = titles[view][0];
+  document.getElementById("pageSub").textContent = titles[view][1];
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+
+document.querySelectorAll(".ledger-switch button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    CTX = btn.dataset.ctx;
+    document.body.setAttribute("data-context", CTX);
+    document.querySelectorAll(".ledger-switch button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    renderAll();
+  });
+});
+
+document.getElementById("themeToggle").addEventListener("click", ()=>{
+  THEME = THEME==="dark" ? "light" : "dark";
+  document.body.setAttribute("data-theme", THEME);
+  document.querySelector("#themeToggle span").textContent = THEME==="dark" ? "Switch to light mode" : "Switch to dark mode";
+  document.querySelector("#themeToggle").firstChild.textContent = THEME==="dark" ? "🌙 " : "☀️ ";
+  renderAll(); // redraw canvases with new colors
+});
+
+/* ======================================================================
+   CANVAS CHART HELPERS (no external libs)
+====================================================================== */
+function css(varName){ return getComputedStyle(document.body).getPropertyValue(varName).trim(); }
+function fitCanvas(canvas){
+  const ratio = window.devicePixelRatio||1;
+  const w = canvas.clientWidth || canvas.parentElement.clientWidth;
+  const h = canvas.height ? parseInt(canvas.getAttribute('height')) : 200;
+  canvas.width = w*ratio; canvas.height = h*ratio;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  return {ctx, w, h};
+}
+
+function drawBar(canvasId, labels, values, color){
+  const canvas = document.getElementById(canvasId); if(!canvas) return;
+  const {ctx,w,h} = fitCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const max = Math.max(...values.map(Math.abs), 1);
+  const padL=44, padB=26, padT=10;
+  const chartW = w-padL-12, chartH = h-padB-padT;
+  const bw = chartW/values.length*0.55;
+  const gap = chartW/values.length;
+  ctx.strokeStyle = css('--line'); ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y = padT + chartH - (chartH*i/4);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-8,y); ctx.stroke();
+    ctx.fillStyle = css('--text-low'); ctx.font="10px "+getComputedStyle(document.body).fontFamily;
+    ctx.textAlign="right";
+    ctx.fillText(Math.round(max*i/4).toLocaleString(), padL-8, y+3);
+  }
+  values.forEach((v,i)=>{
+    const bh = (Math.abs(v)/max)*chartH;
+    const x = padL + gap*i + (gap-bw)/2;
+    const y = padT + chartH - bh;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x,y,bw,bh,4); else ctx.rect(x,y,bw,bh);
+    ctx.fill();
+    ctx.fillStyle = css('--text-low'); ctx.font="10.5px "+getComputedStyle(document.body).fontFamily;
+    ctx.textAlign="center";
+    ctx.fillText(labels[i], x+bw/2, h-8);
+  });
+}
+
+function drawLine(canvasId, labels, series, colors){
+  const canvas = document.getElementById(canvasId); if(!canvas) return;
+  const {ctx,w,h} = fitCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const allVals = series.flat();
+  const max = Math.max(...allVals, 1), min = Math.min(...allVals, 0);
+  const padL=48, padB=26, padT=14;
+  const chartW = w-padL-16, chartH = h-padB-padT;
+  const range = (max-min)||1;
+  ctx.strokeStyle = css('--line'); ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const val = min + range*i/4;
+    const y = padT + chartH - (chartH*i/4);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-8,y); ctx.stroke();
+    ctx.fillStyle = css('--text-low'); ctx.font="10px sans-serif"; ctx.textAlign="right";
+    ctx.fillText(Math.round(val).toLocaleString(), padL-8, y+3);
+  }
+  series.forEach((vals,si)=>{
+    ctx.strokeStyle = colors[si]; ctx.lineWidth=2.4; ctx.beginPath();
+    vals.forEach((v,i)=>{
+      const x = padL + (chartW/(vals.length-1))*i;
+      const y = padT + chartH - ((v-min)/range)*chartH;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    vals.forEach((v,i)=>{
+      const x = padL + (chartW/(vals.length-1))*i;
+      const y = padT + chartH - ((v-min)/range)*chartH;
+      ctx.fillStyle = colors[si];
+      ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fill();
+    });
+  });
+  ctx.fillStyle = css('--text-low'); ctx.font="10.5px sans-serif"; ctx.textAlign="center";
+  labels.forEach((l,i)=>{
+    const x = padL + (chartW/(labels.length-1))*i;
+    ctx.fillText(l, x, h-8);
+  });
+}
+
+function drawDonut(canvasId, segments){
+  const canvas = document.getElementById(canvasId); if(!canvas) return;
+  const {ctx,w,h} = fitCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const total = segments.reduce((a,b)=>a+b.value,0) || 1;
+  const cx = w*0.34, cy = h/2, r = Math.min(cx,h/2)-10, rInner = r*0.6;
+  let start = -Math.PI/2;
+  segments.forEach(seg=>{
+    const angle = (seg.value/total)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+angle);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    start += angle;
+  });
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath(); ctx.arc(cx,cy,rInner,0,7); ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = css('--text-hi'); ctx.font="600 15px "+getComputedStyle(document.body).fontFamily;
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText(money(total), cx, cy-6);
+  ctx.font="10px sans-serif"; ctx.fillStyle=css('--text-low');
+  ctx.fillText("total", cx, cy+12);
+  // legend
+  let ly = 18;
+  segments.forEach(seg=>{
+    ctx.fillStyle = seg.color;
+    ctx.fillRect(w*0.66, ly-8, 9, 9);
+    ctx.fillStyle = css('--text-mid'); ctx.font="11px sans-serif"; ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+    ctx.fillText(seg.label+" · "+Math.round(seg.value/total*100)+"%", w*0.66+14, ly);
+    ly += 20;
+  });
+}
+
+function drawGauge(canvasId, score){
+  const canvas = document.getElementById(canvasId); if(!canvas) return;
+  const {ctx,w,h} = fitCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h-6, r=w/2-18;
+  ctx.lineWidth=16; ctx.lineCap="round";
+  ctx.strokeStyle = css('--line');
+  ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,0); ctx.stroke();
+  const color = score>=70?css('--good'):score>=45?css('--warn'):css('--danger');
+  const angle = Math.PI + (score/100)*Math.PI;
+  ctx.strokeStyle = color;
+  ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,angle); ctx.stroke();
+}
+
+/* ======================================================================
+   RENDER FUNCTIONS
+====================================================================== */
+function computeHealth(){
+  const bd = DATA.business, pd = DATA.personal;
+  const incB = sum(bd.income,'amt'), expB = sum(bd.expenses,'amt')+sum(bd.debts,'minPay')+sum(bd.team,'cost')+sum(bd.subscriptions,'amt');
+  const incP = sum(pd.income,'amt'), expP = sum(pd.expenses,'amt')+sum(pd.debts,'minPay')+sum(pd.subscriptions,'amt');
+  const totalInc = incB+incP, totalExp = expB+expP;
+  const totalDebt = sum(bd.debts,'balance')+sum(pd.debts,'balance');
+  const totalReserve = sum(bd.reserves,'balance')+sum(pd.reserves,'balance');
+  const savingsRate = totalInc>0 ? (totalInc-totalExp)/totalInc : 0;
+  const debtToIncome = totalInc>0 ? (sum(bd.debts,'minPay')+sum(pd.debts,'minPay'))/totalInc : 1;
+  const runwayMonths = totalExp>0 ? totalReserve/totalExp : 0;
+
+  let score = 0;
+  score += Math.max(0, Math.min(35, savingsRate*100*1.1));
+  score += Math.max(0, 30 - debtToIncome*100*0.9);
+  score += Math.max(0, Math.min(25, runwayMonths*3.5));
+  score += 10; // baseline for having structured tracking at all
+  score = Math.max(4, Math.min(98, Math.round(score)));
+
+  return {score, savingsRate, debtToIncome, runwayMonths, totalDebt, totalReserve, totalInc, totalExp};
+}
+
+function renderOverview(){
+  const h = computeHealth();
+  drawGauge('gaugeCanvas', h.score);
+  document.getElementById('healthScoreNum').textContent = h.score;
+  const verdict = h.score>=70 ? ["Strong footing", css('--good')] : h.score>=45 ? ["Needs attention", css('--warn')] : ["At risk", css('--danger')];
+  const vEl = document.getElementById('healthVerdict');
+  vEl.textContent = verdict[0]; vEl.style.color = verdict[1];
+
+  const drivers = [
+    ["Savings rate", (h.savingsRate*100).toFixed(0)+"%", h.savingsRate>0.15?"good":h.savingsRate>0?"warn":"danger"],
+    ["Debt service / income", (h.debtToIncome*100).toFixed(0)+"%", h.debtToIncome<0.25?"good":h.debtToIncome<0.4?"warn":"danger"],
+    ["Cash runway", h.runwayMonths.toFixed(1)+" months", h.runwayMonths>6?"good":h.runwayMonths>3?"warn":"danger"],
+  ];
+  document.getElementById('scoreDrivers').innerHTML = drivers.map(dr=>
+    `<li><span>${dr[0]}</span><span class="tag ${dr[2]}">${dr[1]}</span></li>`).join("");
+
+  const aiMsgs = [];
+  if(h.debtToIncome>0.35) aiMsgs.push("Debt service is eating a large share of income — the payoff planner in <b>Debt & Loans</b> can show you how extra payments shorten this.");
+  if(h.runwayMonths<4) aiMsgs.push("Your combined cash runway is under 4 months. Most advisors suggest 3–6 months for a small team; consider redirecting surplus into reserves.");
+  if(h.savingsRate>0.1) aiMsgs.push("You're saving a healthy share of income overall — a good moment to accelerate debt payoff or boost reserve contributions.");
+  if(aiMsgs.length===0) aiMsgs.push("Your finances look balanced right now. Keep monitoring the debt-to-income ratio as your team grows.");
+  document.getElementById('aiOverviewBox').innerHTML = aiMsgs.join("<br><br>");
+
+  document.getElementById('ctxLabelOverview').textContent = CTX==='business' ? 'Business' : 'Personal';
+  const inc = sum(d().income,'amt'), exp = sum(d().expenses,'amt') + (CTX==='business'?sum(d().team,'cost'):0) + sum(d().subscriptions,'amt') + sum(d().debts,'minPay');
+  const net = inc-exp;
+  const stats = [
+    ["Monthly Income", money(inc), "flat", ""],
+    ["Monthly Outflow", money(exp), "flat", ""],
+    ["Net Position", money(net), net>=0?"up":"down", net>=0?"Surplus":"Shortfall"],
+    ["Debt Outstanding", money(sum(d().debts,'balance')), "flat", d().debts.length+" open balances"],
+  ];
+  document.getElementById('overviewStats').innerHTML = stats.map(s=>`
+    <div class="card"><h3>${s[0]}</h3><div class="stat-num mono">${s[1]}</div>
+    <div class="stat-delta ${s[2]}">${s[3]}</div></div>`).join("");
+
+  const trend = d().trend;
+  drawLine('overviewTrendChart', ["-5mo","-4mo","-3mo","-2mo","-1mo","Now"], [trend], [css('--accent')]);
+}
+
+function rowActions(idx, type){
+  return `<button class="btn ghost small" onclick="removeItem('${type}',${idx})">Remove</button>`;
+}
+
+function renderIncomeExpense(){
+  const inc = sum(d().income,'amt');
+  const teamCost = CTX==='business'? sum(d().team,'cost') : 0;
+  const exp = sum(d().expenses,'amt') + teamCost + sum(d().subscriptions,'amt');
+  document.getElementById('incTotalIncome').textContent = money(inc);
+  document.getElementById('incTotalExpense').textContent = money(exp);
+  const net = inc-exp;
+  document.getElementById('incNetMargin').textContent = money(net);
+  document.getElementById('incNetMargin').style.color = net>=0?css('--good'):css('--danger');
+  document.getElementById('incNetMarginFoot').textContent = inc>0 ? Math.round(net/inc*100)+"% margin" : "—";
+
+  document.getElementById('incomeTable').innerHTML = d().income.map((r,i)=>`
+    <tr><td>${r.name}</td><td><span class="tag ${CTX==='business'?'biz':'per'}">${r.cat}</span></td>
+    <td class="num">${money(r.amt)}</td><td>${rowActions(i,'income')}</td></tr>`).join("") || `<tr><td colspan="4" class="empty">No income sources yet.</td></tr>`;
+
+  document.getElementById('expenseTable').innerHTML = d().expenses.map((r,i)=>`
+    <tr><td>${r.name}</td><td><span class="tag ${CTX==='business'?'biz':'per'}">${r.cat}</span></td>
+    <td class="num">${money(r.amt)}</td><td>${rowActions(i,'expense')}</td></tr>`).join("") || `<tr><td colspan="4" class="empty">No expenses yet.</td></tr>`;
+
+  const catMap = {};
+  d().expenses.forEach(e=>{ catMap[e.cat]=(catMap[e.cat]||0)+e.amt; });
+  const palette = ['#2FA593','#8B7FD1','#D9A94E','#D96455','#6FBF8B','#5B9BD9','#B98CD1'];
+  const segs = Object.keys(catMap).map((k,i)=>({label:k, value:catMap[k], color:palette[i%palette.length]}));
+  drawDonut('expenseDonut', segs.length?segs:[{label:'No data',value:1,color:css('--line')}]);
+  document.getElementById('expenseCatList').innerHTML = segs.map(s=>`
+    <li><span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${s.color};margin-right:8px;"></span>${s.label}</span><span class="mono">${money(s.value)}</span></li>`).join("") || `<li class="empty">Nothing to show</li>`;
+}
+
+function renderDebt(){
+  const debts = d().debts;
+  const totalBal = sum(debts,'balance');
+  const totalMin = sum(debts,'minPay');
+  const inc = sum(d().income,'amt');
+  document.getElementById('debtTotal').textContent = money(totalBal);
+  document.getElementById('debtCount').textContent = debts.length + " open " + (debts.length===1?"balance":"balances");
+  document.getElementById('debtMonthly').textContent = money(totalMin);
+  const ratio = inc>0 ? totalMin/inc : 0;
+  document.getElementById('debtRatio').textContent = (ratio*100).toFixed(0)+"%";
+  document.getElementById('debtRatio').style.color = ratio<0.25?css('--good'):ratio<0.4?css('--warn'):css('--danger');
+  document.getElementById('debtRatioFoot').textContent = ratio<0.25?"Healthy":ratio<0.4?"Getting tight":"High — prioritize payoff";
+
+  document.getElementById('debtTable').innerHTML = debts.map((r,i)=>`
+    <tr><td>${r.name}</td><td>${r.rate}%</td><td class="num">${money(r.balance)}</td><td class="num">${money(r.minPay)}</td><td>${rowActions(i,'debt')}</td></tr>`).join("") || `<tr><td colspan="5" class="empty">No loans on this ledger. 🎉</td></tr>`;
+
+  renderPayoff();
+}
+
+function amortizeMonths(balance, rate, payment){
+  if(balance<=0) return 0;
+  const r = rate/100/12;
+  if(payment <= balance*r) return 999; // never pays off
+  let months=0, bal=balance;
+  while(bal>0 && months<600){
+    bal = bal*(1+r) - payment;
+    months++;
+  }
+  return months;
+}
+
+function renderPayoff(){
+  const extra = parseInt(document.getElementById('extraPaySlider').value);
+  document.getElementById('extraPayVal').textContent = money(extra);
+  const debts = d().debts;
+  if(debts.length===0){
+    document.getElementById('payoffSummary').innerHTML = "No debts on this ledger — nothing to plan.";
+    drawLine('payoffChart', ["0"], [[0]], [css('--accent')]);
+    return;
+  }
+  // avalanche: sort by rate desc, apply extra to highest-rate debt
+  const sorted = [...debts].sort((a,b)=>b.rate-a.rate);
+  const baseMonths = Math.max(...debts.map(dd=>amortizeMonths(dd.balance, dd.rate, dd.minPay)));
+  const withExtraMonths = amortizeMonths(sorted[0].balance, sorted[0].rate, sorted[0].minPay+extra);
+  const otherMax = sorted.length>1 ? Math.max(...sorted.slice(1).map(dd=>amortizeMonths(dd.balance,dd.rate,dd.minPay))) : 0;
+  const newTotalMonths = Math.max(withExtraMonths, otherMax);
+  const monthsSaved = Math.max(0, baseMonths - newTotalMonths);
+  const totalInterestBase = sum(debts,'minPay')*baseMonths - sum(debts,'balance');
+
+  document.getElementById('payoffSummary').innerHTML = extra===0
+    ? `At minimum payments, your slowest-moving debt (<b>${sorted[0].name}</b>) clears in ~<b>${baseMonths} months</b>. Drag the slider to see how extra payments compound.`
+    : `Adding <b>${money(extra)}/mo</b> toward <b>${sorted[0].name}</b> (your highest-rate debt) clears your full debt load roughly <b>${monthsSaved} months sooner</b> — around <b>${newTotalMonths} months</b> total.`;
+
+  // build projected balance curve for the highest-rate debt with vs without extra
+  const months = Math.min(48, Math.max(baseMonths, newTotalMonths, 6));
+  const withExtra=[], withoutExtra=[];
+  let b1=sorted[0].balance, b2=sorted[0].balance;
+  const r = sorted[0].rate/100/12;
+  for(let i=0;i<=months;i+=Math.ceil(months/12)){
+    withExtra.push(Math.max(0,Math.round(b1)));
+    withoutExtra.push(Math.max(0,Math.round(b2)));
+    for(let s=0;s<Math.ceil(months/12);s++){
+      b1 = Math.max(0, b1*(1+r) - (sorted[0].minPay+extra));
+      b2 = Math.max(0, b2*(1+r) - sorted[0].minPay);
+    }
+  }
+  drawLine('payoffChart', withExtra.map((_,i)=>i===0?"Now":""), [withoutExtra, withExtra], [css('--danger'), css('--good')]);
+}
+document.getElementById('extraPaySlider').addEventListener('input', renderPayoff);
+
+function renderCashflow(){
+  const inc = sum(d().income,'amt');
+  const exp = sum(d().expenses,'amt') + (CTX==='business'?sum(d().team,'cost'):0) + sum(d().subscriptions,'amt') + sum(d().debts,'minPay');
+  const burn = inc-exp;
+  document.getElementById('cfBurn').textContent = money(burn);
+  document.getElementById('cfBurn').style.color = burn>=0?css('--good'):css('--danger');
+  const reserves = sum(d().reserves,'balance');
+  const runway = burn<0 ? reserves/Math.abs(burn) : Infinity;
+  document.getElementById('cfRunway').textContent = burn>=0 ? "Indefinite" : runway.toFixed(1)+" months";
+  const projected12 = reserves + burn*12;
+  document.getElementById('cfProjected').textContent = money(projected12);
+  document.getElementById('cfProjected').style.color = projected12>=reserves?css('--good'):css('--danger');
+
+  const series=[]; let running=reserves;
+  const labels=[];
+  for(let i=0;i<=12;i++){ labels.push(i===0?"Now":"M"+i); series.push(Math.round(running)); running+=burn; }
+  drawLine('cashflowChart', labels, [series], [burn>=0?css('--good'):css('--danger')]);
+
+  document.getElementById('cashflowAI').innerHTML = burn>=0
+    ? `You're generating a monthly surplus of <b>${money(burn)}</b>. At this pace, reserves grow to roughly <b>${money(projected12)}</b> within a year.`
+    : `You're burning <b>${money(Math.abs(burn))}/month</b> beyond income. At current reserves, that gives you about <b>${isFinite(runway)?runway.toFixed(1):"—"} months</b> of runway before cash runs out — worth revisiting expenses or debt payments soon.`;
+}
+
+function renderReserves(){
+  const reserves = d().reserves;
+  const total = sum(reserves,'balance');
+  document.getElementById('resTotal').textContent = money(total);
+  document.getElementById('resFoot').textContent = reserves.length + " accounts";
+  document.getElementById('resMonthly').textContent = money(d().reserveMonthly);
+  const est12 = total*1.05 + d().reserveMonthly*12; // ~5% growth + contributions
+  document.getElementById('resGrowth').textContent = money(est12-total);
+
+  const palette = ['#2FA593','#8B7FD1','#D9A94E','#6FBF8B','#5B9BD9'];
+  const segs = reserves.map((r,i)=>({label:r.name, value:r.balance, color:palette[i%palette.length]}));
+  drawDonut('reserveDonut', segs.length?segs:[{label:'No data',value:1,color:css('--line')}]);
+
+  const labels=[]; const series=[]; let running=total;
+  for(let i=0;i<=12;i++){ labels.push(i===0?"Now":"M"+i); series.push(Math.round(running)); running = running*(1+0.004) + d().reserveMonthly; }
+  drawLine('reserveLineChart', labels, [series], [css('--accent')]);
+
+  document.getElementById('reserveTable').innerHTML = reserves.map((r,i)=>`
+    <tr><td>${r.name}</td><td>${r.type}</td><td class="num">${money(r.balance)}</td><td>${rowActions(i,'reserve')}</td></tr>`).join("") || `<tr><td colspan="4" class="empty">No accounts yet.</td></tr>`;
+}
+
+function renderBudgets(){
+  const list = d().budgets;
+  document.getElementById('budgetList').innerHTML = list.map((b,i)=>{
+    const pct = Math.min(140, Math.round(b.spent/b.cap*100));
+    const over = b.spent>b.cap;
+    return `<div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <h3 style="margin:0;">${b.cat}</h3>
+        <span class="tag ${over?'danger':pct>85?'warn':'good'}">${pct}%</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-mid); margin-top:8px;">
+        <span class="mono">${money(b.spent)} spent</span><span class="mono">of ${money(b.cap)}</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,pct)}%; background:${over?css('--danger'):pct>85?css('--warn'):css('--accent')}"></div></div>
+      <button class="btn ghost small" style="margin-top:12px;" onclick="removeItem('budget',${i})">Remove</button>
+    </div>`;
+  }).join("") || `<div class="empty">No budgets set for this ledger yet.</div>`;
+}
+
+function renderTeamSub(){
+  document.getElementById('teamOnlyBiz').style.display = CTX==='business' ? 'block':'none';
+  document.getElementById('subsHeading').textContent = CTX==='business' ? 'Business subscriptions & tools' : 'Personal subscriptions';
+  if(CTX==='business'){
+    const team = d().team;
+    document.getElementById('teamCount').textContent = team.length;
+    const payroll = sum(team,'cost');
+    document.getElementById('teamPayroll').textContent = money(payroll);
+    const rev = sum(d().income,'amt');
+    const pct = rev>0 ? payroll/rev*100 : 0;
+    document.getElementById('teamPayrollPct').textContent = pct.toFixed(0)+"%";
+    document.getElementById('teamPayrollFoot').textContent = pct<50?"Within healthy range":"Above typical range — watch closely";
+    document.getElementById('teamTable').innerHTML = team.map((t,i)=>`
+      <tr><td>${t.role}</td><td class="num">${money(t.cost)}</td><td>${rowActions(i,'team')}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">No team members added.</td></tr>`;
+  }
+  const subs = d().subscriptions;
+  const monthly = sum(subs,'amt');
+  document.getElementById('subMonthlyTotal').textContent = money(monthly);
+  document.getElementById('subAnnualTotal').textContent = money(monthly*12);
+  document.getElementById('subCount').textContent = subs.length;
+  document.getElementById('subTable').innerHTML = subs.map((s,i)=>`
+    <tr><td>${s.name}</td><td><span class="tag ${CTX==='business'?'biz':'per'}">${s.cat}</span></td><td class="num">${money(s.amt)}</td><td>${rowActions(i,'subscription')}</td></tr>`).join("") || `<tr><td colspan="4" class="empty">No subscriptions tracked.</td></tr>`;
+}
+
+function renderGoals(){
+  const goals = d().goals;
+  document.getElementById('goalsGrid').innerHTML = goals.map((g,i)=>{
+    const pct = Math.min(100, Math.round(g.current/g.target*100));
+    return `<div class="card">
+      <h3>${g.name}</h3>
+      <div class="stat-num mono" style="font-size:22px;">${money(g.current)} <span style="font-size:13px; color:var(--text-low); font-family:var(--font-body);">of ${money(g.target)}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="card-foot">${pct}% funded · target ${g.due}</div>
+      <button class="btn ghost small" style="margin-top:12px;" onclick="removeItem('goal',${i})">Remove</button>
+    </div>`;
+  }).join("") || `<div class="empty">No goals set for this ledger yet.</div>`;
+}
+
+/* ---- What-if simulator (uses combined business context by design, since decisions here are business-flavored) ---- */
+function renderSimulator(){
+  const revGrowth = parseInt(document.getElementById('simRev').value);
+  const extraDebt = parseInt(document.getElementById('simDebt').value);
+  const hireCost = parseInt(document.getElementById('simHire').value);
+  const reserveAdd = parseInt(document.getElementById('simReserve').value);
+  document.getElementById('simRevVal').textContent = revGrowth+"%";
+  document.getElementById('simDebtVal').textContent = money(extraDebt);
+  document.getElementById('simHireVal').textContent = money(hireCost);
+  document.getElementById('simReserveVal').textContent = money(reserveAdd);
+
+  const bd = DATA.business;
+  const baseInc = sum(bd.income,'amt');
+  const baseExp = sum(bd.expenses,'amt') + sum(bd.team,'cost') + sum(bd.subscriptions,'amt') + sum(bd.debts,'minPay');
+  const labels=[], baseline=[], scenario=[];
+  let baseCash = sum(bd.reserves,'balance'), scenCash = baseCash;
+  for(let m=0;m<=12;m++){
+    labels.push(m===0?"Now":"M"+m);
+    baseline.push(Math.round(baseCash));
+    scenario.push(Math.round(scenCash));
+    const incThisMonthScenario = baseInc*(1+revGrowth/100*(m/12));
+    baseCash += (baseInc-baseExp);
+    scenCash += (incThisMonthScenario - baseExp - extraDebt - hireCost - reserveAdd);
+  }
+  drawLine('simChart', labels, [baseline, scenario], [css('--text-low'), css('--accent')]);
+
+  const diff = scenario[scenario.length-1] - baseline[baseline.length-1];
+  let msg = `This scenario ends the year with <b>${money(scenario[scenario.length-1])}</b> in reserves, `;
+  msg += diff>=0 ? `<b style="color:${css('--good')}">${money(diff)} better</b> than staying on your current path.` : `<b style="color:${css('--danger')}">${money(Math.abs(diff))} worse</b> than staying on your current path.`;
+  if(hireCost>0) msg += ` A new hire at ${money(hireCost)}/mo needs roughly ${(hireCost/(baseInc/100)).toFixed(1)}% revenue growth just to break even.`;
+  if(extraDebt>0) msg += ` The extra ${money(extraDebt)}/mo toward debt trades short-term cash for a faster payoff — check the Debt & Loans planner for the exact timeline.`;
+  document.getElementById('simAI').innerHTML = msg;
+}
+['simRev','simDebt','simHire','simReserve'].forEach(id=>document.getElementById(id).addEventListener('input', renderSimulator));
+document.getElementById('simReset').addEventListener('click', ()=>{
+  document.getElementById('simRev').value=8; document.getElementById('simDebt').value=0;
+  document.getElementById('simHire').value=0; document.getElementById('simReserve').value=0;
+  renderSimulator();
+});
+
+/* ---- Reports & Tips ---- */
+const CHECKLIST_ITEMS = [
+  "Separate business and personal accounts completely",
+  "Build a 3–6 month operating reserve for the business",
+  "List every loan with its rate — target the highest-rate balance first",
+  "Review payroll as a % of revenue quarterly",
+  "Automate a fixed monthly transfer into reserves",
+  "Cancel or renegotiate unused subscriptions",
+  "Review debt-to-income ratio every quarter",
+  "Set a written goal for what 'financially healthy' looks like this year",
+];
+function renderChecklist(){
+  const saved = JSON.parse(localStorage.getItem('pfcc_checklist')||'{}');
+  document.getElementById('checklistCard').innerHTML = CHECKLIST_ITEMS.map((item,i)=>`
+    <label><input type="checkbox" data-i="${i}" ${saved[i]?'checked':''}><span class="${saved[i]?'done':''}">${item}</span></label>`).join("");
+  document.querySelectorAll('#checklistCard input').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const s = JSON.parse(localStorage.getItem('pfcc_checklist')||'{}');
+      s[cb.dataset.i] = cb.checked;
+      localStorage.setItem('pfcc_checklist', JSON.stringify(s));
+      cb.nextElementSibling.classList.toggle('done', cb.checked);
+    });
+  });
+}
+
+function renderTips(){
+  const h = computeHealth();
+  const tips = [];
+  tips.push("Pay down your highest interest-rate debt first (avalanche method) — it saves more in interest than paying off the largest balance first.");
+  if(h.debtToIncome>0.3) tips.push("Debt service is a meaningful share of income right now. Consider pausing new discretionary spending until the ratio drops below 30%.");
+  tips.push("Keep business and personal reserves separate, but review both together monthly — a shortfall in one often gets covered by the other.");
+  if(h.runwayMonths<6) tips.push("Aim for 3–6 months of operating expenses in reserve before increasing investment contributions.");
+  tips.push("Review recurring subscriptions quarterly — unused tools are one of the easiest costs to cut without impacting the business.");
+  tips.push("When hiring, model the fully loaded cost (salary + taxes + benefits + tools) against realistic revenue growth, not best-case.");
+  document.getElementById('tipsGrid').innerHTML = tips.map(t=>`<div class="tip-card">${t}</div>`).join("");
+
+  const prompts = [
+    "What would it take to become debt-free in 18 months?",
+    "How much revenue growth do I need to safely hire one more person?",
+    "What's my true monthly burn if I strip out one-time expenses?",
+    "Which subscription costs the most relative to how often it's used?",
+    "If revenue dropped 20% tomorrow, how long would reserves last?",
+  ];
+  document.getElementById('aiPrompts').innerHTML = prompts.map(p=>`<span class="pill">${p}</span>`).join("");
+
+  const resources = [
+    ["U.S. SBA — Small Business Loans & Financing", "https://www.sba.gov/funding-programs/loans"],
+    ["Consumer Financial Protection Bureau — Debt guidance", "https://www.consumerfinance.gov/consumer-tools/debt-collection/"],
+    ["IRS — Small Business & Self-Employed Tax Center", "https://www.irs.gov/businesses/small-businesses-self-employed"],
+    ["NFCC — Nonprofit credit counseling", "https://www.nfcc.org/"],
+  ];
+  document.getElementById('resourceLinks').innerHTML = resources.map(r=>`<a href="${r[1]}" target="_blank" rel="noopener">${r[0]} ↗</a>`).join("");
+}
+
+function renderReport(){
+  document.getElementById('reportTitle').textContent = (CTX==='business'?'Business':'Personal') + " Ledger Summary";
+  document.getElementById('reportDate').textContent = new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  const h = computeHealth();
+  const inc = sum(d().income,'amt');
+  const exp = sum(d().expenses,'amt') + (CTX==='business'?sum(d().team,'cost'):0) + sum(d().subscriptions,'amt') + sum(d().debts,'minPay');
+  const stats = [
+    ["Health Score", h.score+" / 100"],
+    ["Monthly Income", money(inc)],
+    ["Monthly Outflow", money(exp)],
+    ["Debt Outstanding", money(sum(d().debts,'balance'))],
+    ["Total Reserves", money(sum(d().reserves,'balance'))],
+    ["Debt-to-Income", (h.debtToIncome*100).toFixed(0)+"%"],
+    ["Cash Runway", h.runwayMonths.toFixed(1)+" mo"],
+    ["Savings Rate", (h.savingsRate*100).toFixed(0)+"%"],
+  ];
+  document.getElementById('reportStats').innerHTML = stats.map(s=>`
+    <div class="card"><h3>${s[0]}</h3><div class="stat-num mono" style="font-size:20px;">${s[1]}</div></div>`).join("");
+}
+
+function renderAll(){
+  renderOverview();
+  renderIncomeExpense();
+  renderDebt();
+  renderCashflow();
+  renderReserves();
+  renderBudgets();
+  renderTeamSub();
+  renderGoals();
+  renderSimulator();
+  renderReport();
+  renderTips();
+  renderChecklist();
+}
+
+/* ======================================================================
+   REMOVE / ADD ITEMS
+====================================================================== */
+function removeItem(type, idx){
+  const map = {income:'income',expense:'expenses',debt:'debts',reserve:'reserves',team:'team',subscription:'subscriptions',budget:'budgets',goal:'goals'};
+  d()[map[type]].splice(idx,1);
+  saveData(); renderAll();
+}
+
+const FORM_CONFIGS = {
+  income: {title:"Add income source", fields:[["name","text","Source name"],["cat","text","Category"],["amt","number","Monthly amount"]], target:"income"},
+  expense: {title:"Add expense", fields:[["name","text","Item name"],["cat","text","Category"],["amt","number","Monthly amount"]], target:"expenses"},
+  debt: {title:"Add loan", fields:[["name","text","Loan name"],["rate","number","Interest rate %"],["balance","number","Balance"],["minPay","number","Minimum monthly payment"]], target:"debts"},
+  reserve: {title:"Add account", fields:[["name","text","Account name"],["type","text","Type (Cash / Investment)"],["balance","number","Balance"]], target:"reserves"},
+  team: {title:"Add team member", fields:[["role","text","Role"],["cost","number","Monthly fully-loaded cost"]], target:"team"},
+  subscription: {title:"Add subscription", fields:[["name","text","Service name"],["cat","text","Category"],["amt","number","Monthly cost"]], target:"subscriptions"},
+  budget: {title:"Add budget line", fields:[["cat","text","Category name"],["cap","number","Monthly cap"],["spent","number","Spent so far"]], target:"budgets"},
+  goal: {title:"Add goal", fields:[["name","text","Goal name"],["target","number","Target amount"],["current","number","Current amount"],["due","text","Target date (e.g. 2027-06)"]], target:"goals"},
+};
+let currentForm = null;
+function openForm(type){
+  currentForm = type;
+  const cfg = FORM_CONFIGS[type];
+  document.getElementById('modalTitle').textContent = cfg.title;
+  document.getElementById('modalBody').innerHTML = `<div class="formrow">` + cfg.fields.map(f=>`
+    <div class="field"><label>${f[2]}</label><input type="${f[1]}" id="f_${f[0]}" ${f[1]==='number'?'step="any"':''}></div>`).join("") + `</div>`;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+function closeForm(){ document.getElementById('modalOverlay').style.display='none'; }
+document.getElementById('modalSave').addEventListener('click', ()=>{
+  const cfg = FORM_CONFIGS[currentForm];
+  const obj = {};
+  cfg.fields.forEach(f=>{
+    const el = document.getElementById('f_'+f[0]);
+    obj[f[0]] = f[1]==='number' ? (parseFloat(el.value)||0) : el.value;
+  });
+  d()[cfg.target].push(obj);
+  saveData(); closeForm(); renderAll();
+});
+
+/* ======================================================================
+   INIT
+====================================================================== */
+window.addEventListener('resize', ()=>{ renderAll(); });
+renderAll();
+</script>
+</body>
+</html>
