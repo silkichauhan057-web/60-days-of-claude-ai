@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #0f0f14;
+    --bg-card: #1a1a24;
+    --bg-card-alt: #1e1e2e;
+    --text-primary: #f0f0f5;
+    --text-secondary: #8888a0;
+    --accent-green: #34d399;
+    --accent-red: #f87171;
+    --accent-blue: #60a5fa;
+    --accent-gold: #fbbf24;
+    --accent-purple: #a78bfa;
+    --border-subtle: rgba(255,255,255,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    padding: 40px 16px 60px;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  header.banner {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header.banner h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+
+  header.banner .subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+  }
+
+  header.banner .date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+
+  .gradient-line {
+    height: 3px;
+    margin: 20px 0 8px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-gold));
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 28px;
+    transition: transform 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  p, li {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+
+  .label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 14px;
+    margin-bottom: 4px;
+  }
+
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+
+  /* Section accents */
+  #s1 { border-left: 4px solid var(--accent-blue); }
+  #s2-a { border-left: 4px solid var(--accent-green); }
+  #s2-b { border-left: 4px solid var(--accent-green); }
+  #s3 { border-left: 4px solid var(--accent-purple); }
+  #s4 { border-left: 4px solid var(--accent-blue); }
+  #s5 { border-left: 4px solid var(--accent-red); }
+  #s6 { border-left: 4px solid var(--accent-green); }
+  #s7 {
+    border-left: 4px solid var(--accent-gold);
+    background: var(--bg-card-alt);
+    padding: 36px 28px;
+    box-shadow: 0 0 20px rgba(251,191,36,0.15), 0 4px 24px rgba(0,0,0,0.3);
+  }
+  #s8 { border-left: 4px solid var(--accent-gold); }
+
+  .option-tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .tag-a { background: rgba(96,165,250,0.15); color: var(--accent-blue); }
+  .tag-b { background: rgba(52,211,153,0.15); color: var(--accent-green); }
+
+  .weakness { color: var(--accent-red); }
+  .strength { color: var(--accent-green); }
+
+  /* Matrix */
+  .matrix-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 10px;
+  }
+  .matrix-label {
+    width: 38%;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .matrix-bars { width: 62%; display: flex; flex-direction: column; gap: 6px; }
+  .bar-container {
+    height: 26px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    width: 0%;
+    transition: width 0.8s ease-out;
+  }
+  .bar-a { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+  .bar-b { background: linear-gradient(90deg, #34d399, #10b981); }
+
+  .matrix-legend {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 18px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    margin-right: 6px;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 10px;
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .total-row.winner {
+    background: rgba(251,191,36,0.1);
+    border: 1px solid rgba(251,191,36,0.3);
+    color: var(--accent-gold);
+  }
+
+  .premortem-block { margin-bottom: 22px; }
+  .premortem-block h4 { font-size: 15px; margin-bottom: 8px; }
+
+  .day-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .day-num {
+    color: var(--accent-green);
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 90px;
+  }
+
+  .verdict-option {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--accent-gold);
+    margin-bottom: 12px;
+  }
+  .hard-truth {
+    font-style: italic;
+    color: var(--text-secondary);
+    margin-top: 16px;
+  }
+
+  .mini-cards {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .mini-card {
+    flex: 1 1 200px;
+    background: var(--bg-card-alt);
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 170px;
+  }
+  .mini-card h5 {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+  .mini-card .big {
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--accent-gold);
+  }
+  .mini-card .score-line {
+    font-size: 13px;
+    margin: 4px 0;
+  }
+  .watermark {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    opacity: 0.7;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-top: 40px;
+  }
+
+  @media (max-width: 600px) {
+    .card { padding: 16px; }
+    .matrix-row { flex-direction: column; align-items: flex-start; }
+    .matrix-label, .matrix-bars { width: 100%; }
+    .mini-cards { flex-direction: column; }
+    header.banner h1 { font-size: 24px; }
+    .section-title { font-size: 18px; }
+    .verdict-option { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="banner">
+    <h1>DECISION REPORT</h1>
+    <div class="subtitle">Software Development vs. Data Analytics — Choosing Your Domain</div>
+    <div class="date">Generated August 19, 2026</div>
+    <div class="gradient-line"></div>
+  </header>
+
+  <!-- SECTION 1 -->
+  <div class="card" id="s1">
+    <div class="section-title" style="color:var(--accent-blue);">The Real Decision</div>
+    <p>You're a B.Tech 3rd year student with no internship yet, deciding whether to specialize in Software Development or Data Analytics before placement season.</p>
+    <p>The real trade-off is breadth vs. depth: Software Development means competing in the widest, most crowded pool. Data Analytics means fewer campus openings but less competition per opening.</p>
+    <p>It's hard because you're choosing without a mentor to sanity-check either path, under time pressure from placements — so every option feels like a guess.</p>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card" id="s2-a">
+    <div class="section-title" style="color:var(--accent-green);">The Case For Each Option</div>
+    <span class="option-tag tag-a">Option A — Software Development</span>
+    <p><strong>Strongest case:</strong> The largest share of campus placement drives hire for generalist SDE roles, so this path gives you the most shots on goal.</p>
+    <p class="label">Hidden Upside</p>
+    <p>The fundamentals you build (Python, problem-solving, DSA) transfer directly into data roles later — it keeps a door to analytics open, not closed.</p>
+    <p class="label">Biggest Weakness</p>
+    <p class="weakness">It's the most competitive lane — thousands of students on your campus are prepping the exact same DSA-and-projects path.</p>
+    <p class="label">Best if you value:</p>
+    <p>Optionality and maximizing your placement odds through volume of opportunities.</p>
+  </div>
+
+  <div class="card" id="s2-b">
+    <span class="option-tag tag-b">Option B — Data Analytics</span>
+    <p><strong>Strongest case:</strong> It's a narrower, less-crowded lane — fewer of your peers are seriously building SQL/dashboard portfolios, so it's easier to stand out.</p>
+    <p class="label">Hidden Upside</p>
+    <p>The core skills (SQL, Python, visualization) are quicker to become "interview-ready" in than deep DSA mastery.</p>
+    <p class="label">Biggest Weakness</p>
+    <p class="weakness">Fewer campus drives specifically hire for analytics roles compared to SDE — the opportunity pool at placement time is smaller.</p>
+    <p class="label">Best if you value:</p>
+    <p>Differentiation and depth over raw number of opportunities.</p>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card" id="s3">
+    <div class="section-title" style="color:var(--accent-purple);">Assumption Buster</div>
+    <p class="label">3 Assumptions You May Be Making</p>
+    <ul>
+      <li>That you must fully commit to one identity now, when SQL and Python fundamentals overlap between both paths in your 3rd year.</li>
+      <li>That "no guidance" means guidance isn't available — you haven't mentioned actually asking a senior, faculty member, or placement cell yet.</li>
+      <li>That the domain you pick determines your placement odds more than how much you actually practice and build.</li>
+    </ul>
+    <p class="label">2 Biases at Play</p>
+    <ul>
+      <li><strong>Status quo bias</strong> — you're stuck on the decision itself rather than acting, because inaction feels safer than picking and being "wrong."</li>
+      <li><strong>Loss aversion</strong> — the fear of choosing the "wrong" domain looms larger than the actual (recoverable) cost of trying one path first.</li>
+    </ul>
+    <p class="label">One Thing You're Definitely Ignoring</p>
+    <p>You haven't checked your own placement cell's actual data — how many SDE offers vs. analytics offers came last year. That number would cut through most of this uncertainty immediately.</p>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card" id="s4">
+    <div class="section-title" style="color:var(--accent-blue);">Decision Matrix</div>
+    <div class="matrix-legend">
+      <span><span class="legend-dot" style="background:#3b82f6;"></span>Software Development</span>
+      <span><span class="legend-dot" style="background:#10b981;"></span>Data Analytics</span>
+    </div>
+
+    <div id="matrix-rows"></div>
+
+    <div class="total-row winner">
+      <span>Software Development — Total</span><span>46 / 70</span>
+    </div>
+    <div class="total-row">
+      <span>Data Analytics — Total</span><span>42 / 70</span>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card" id="s5">
+    <div class="section-title" style="color:var(--accent-red);">Premortem — 12 Months From Now, It Failed</div>
+
+    <div class="premortem-block">
+      <h4 style="color:var(--accent-blue);">If Software Development failed...</h4>
+      <ul>
+        <li>Not enough consistent DSA practice — lost out to more prepared peers.</li>
+        <li>No real personal projects, only theory prep — nothing to show interviewers.</li>
+        <li>Burned out from the competition and lack of a structured plan, and stopped practicing.</li>
+      </ul>
+      <p class="label">Early Warning Sign</p>
+      <p>Your mock interview / practice contest scores stay flat by month 3.</p>
+      <p class="label">Prevention Action</p>
+      <p>Get one senior or mentor check-in monthly, and follow a structured DSA challenge instead of random prep.</p>
+    </div>
+
+    <div class="premortem-block">
+      <h4 style="color:var(--accent-green);">If Data Analytics failed...</h4>
+      <ul>
+        <li>Too few analytics-specific roles came to campus — missed the placement window entirely.</li>
+        <li>Skills stayed shallow (tutorials only, no real project) and didn't survive interviews.</li>
+        <li>No guidance meant time was spent on the wrong tools.</li>
+      </ul>
+      <p class="label">Early Warning Sign</p>
+      <p>By month 2, you can't find any analytics-tagged openings in your placement cell's listings.</p>
+      <p class="label">Prevention Action</p>
+      <p>Check with your placement cell right now what share of recruiters actually hire for data roles vs. SDE roles.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="card" id="s6">
+    <div class="section-title" style="color:var(--accent-green);">7-Day Test Plan</div>
+    <div class="day-row"><span class="day-num">Day 1-2</span><span>Pull your placement cell's last 2 years' data: how many SDE offers vs. analytics offers, and talk to one senior from each track.</span></div>
+    <div class="day-row"><span class="day-num">Day 3-4</span><span>Run a timed trial: 1 hour solving DSA problems, 1 hour building a quick SQL/dashboard mini-project. Notice which one you actually enjoy and finish faster.</span></div>
+    <div class="day-row"><span class="day-num">Day 5-6</span><span>Have one direct conversation with your placement coordinator or a recently-placed senior about the real SDE-vs-analytics hiring ratio on campus.</span></div>
+    <div class="day-row"><span class="day-num">Day 7</span><span>Decide: if the placement data and your Day 3-4 test both point the same direction, commit to that domain for the next 3 months of focused prep.</span></div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="card" id="s7">
+    <div class="section-title" style="color:var(--accent-gold);">The Verdict</div>
+    <div class="verdict-option">Software Development</div>
+    <p>It gives you the widest set of placement opportunities on a campus where SDE roles typically dominate hiring, and its fundamentals (Python, problem-solving) keep an analytics pivot open later if you change your mind.</p>
+    <p class="label">What Could Flip It</p>
+    <p>If your placement cell's actual numbers show more analytics hiring than SDE hiring, or your Day 3-4 test shows you clearly prefer the analytics work — the decision flips to Option B.</p>
+    <p class="hard-truth">Hard truth: the "lack of guidance" you named isn't really a blocker — it's a symptom of not having started yet. A single conversation with your placement cell this week would give you more clarity than another month of thinking alone.</p>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div class="card" id="s8">
+    <div class="section-title" style="color:var(--accent-gold);">Shareable Cards</div>
+    <div class="mini-cards">
+      <div class="mini-card">
+        <h5>Matrix Summary</h5>
+        <div>
+          <div class="score-line">Software Development</div>
+          <div class="big">46 / 70</div>
+          <div class="score-line" style="margin-top:10px;">Data Analytics</div>
+          <div class="big" style="color:var(--accent-green);">42 / 70</div>
+        </div>
+        <div class="watermark">Built with Claude AI</div>
+      </div>
+
+      <div class="mini-card">
+        <h5>Verdict</h5>
+        <div>
+          <div class="big">Software Development</div>
+          <div class="score-line" style="margin-top:8px;">Wider placement pool + skills that keep the analytics door open too.</div>
+        </div>
+        <div class="watermark">Built with Claude AI</div>
+      </div>
+
+      <div class="mini-card">
+        <h5>LinkedIn Hook</h5>
+        <div>
+          <div class="score-line" style="font-weight:700;">"I was stuck choosing between SDE and Data Analytics — until I ran the numbers."</div>
+          <div class="score-line" style="margin-top:8px;">3rd year, no internship, no guidance — just a 7-day test plan and real placement data.</div>
+          <div class="score-line" style="margin-top:6px; color:var(--accent-gold);">→ Build your own Decision Report.</div>
+        </div>
+        <div class="watermark">Built with Claude AI</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Built with Claude AI | ABTalks 60-Day Challenge</footer>
+</div>
+
+<script>
+  const dimensions = [
+    { label: "Life/Career Upside", a: 8, b: 6 },
+    { label: "Financial Safety", a: 8, b: 5 },
+    { label: "Growth & Learning", a: 7, b: 7 },
+    { label: "Stress Level", a: 4, b: 6 },
+    { label: "Reversibility", a: 7, b: 7 },
+    { label: "Long-term Alignment", a: 6, b: 6 },
+    { label: "Regret Risk", a: 6, b: 5 }
+  ];
+
+  const container = document.getElementById('matrix-rows');
+  const barEls = [];
+
+  dimensions.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'matrix-row';
+
+    const barA = document.createElement('div');
+    barA.className = 'bar-fill bar-a';
+    barA.style.transitionDelay = (i * 0.1) + 's';
+    barA.textContent = d.a;
+
+    const barB = document.createElement('div');
+    barB.className = 'bar-fill bar-b';
+    barB.style.transitionDelay = (i * 0.1 + 0.05) + 's';
+    barB.textContent = d.b;
+
+    row.innerHTML = `<div class="matrix-label">${d.label}</div><div class="matrix-bars"></div>`;
+    const barsWrap = row.querySelector('.matrix-bars');
+
+    const containerA = document.createElement('div');
+    containerA.className = 'bar-container';
+    containerA.appendChild(barA);
+
+    const containerB = document.createElement('div');
+    containerB.className = 'bar-container';
+    containerB.appendChild(barB);
+
+    barsWrap.appendChild(containerA);
+    barsWrap.appendChild(containerB);
+    container.appendChild(row);
+
+    barEls.push({ el: barA, width: d.a * 10 });
+    barEls.push({ el: barB, width: d.b * 10 });
+  });
+
+  setTimeout(() => {
+    barEls.forEach(b => { b.el.style.width = b.width + '%'; });
+  }, 100);
+</script>
+
+</body>
+</html>
