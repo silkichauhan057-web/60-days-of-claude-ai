@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autonomous Agent Studio — Code Refinement Pipeline</title>
+<style>
+  :root{
+    --bg:#0B0E14;
+    --surface:#121826;
+    --surface-2:#1A2233;
+    --surface-3:#212B40;
+    --border:#28324A;
+    --border-soft:#1E2740;
+    --text:#E6ECFA;
+    --text-dim:#8E9AB5;
+    --text-faint:#5C6889;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", "Roboto Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+    --c-planner:#6E8CFF;
+    --c-executor:#4FD69C;
+    --c-evaluator:#FFC15E;
+    --c-critic:#FF6E6E;
+    --c-improver:#C792EA;
+    --c-memory:#5FD4E3;
+    --c-reviewer:#FCE38A;
+
+    --good:#4FD69C;
+    --bad:#FF6E6E;
+    --warn:#FFC15E;
+
+    --radius:10px;
+    --radius-lg:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(110,140,255,0.09), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(79,214,156,0.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:rgba(110,140,255,0.35);}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:8px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--border);}
+
+  a{color:var(--c-planner);}
+  code, pre{font-family:var(--mono);}
+
+  .app{
+    display:grid;
+    grid-template-columns: 340px 1fr;
+    min-height:100vh;
+  }
+  @media (max-width: 980px){
+    .app{grid-template-columns:1fr;}
+  }
+
+  /* ---------------- Sidebar ---------------- */
+  .sidebar{
+    border-right:1px solid var(--border-soft);
+    padding:22px 20px 40px;
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    overflow-y:auto;
+    background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent 200px);
+  }
+  @media (max-width: 980px){
+    .sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border-soft);}
+  }
+  .brand{
+    display:flex;align-items:center;gap:10px;margin-bottom:4px;
+  }
+  .brand-mark{
+    width:30px;height:30px;border-radius:8px;
+    background:conic-gradient(from 220deg, var(--c-planner), var(--c-evaluator), var(--c-critic), var(--c-improver), var(--c-planner));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.08), 0 6px 18px -6px rgba(110,140,255,0.5);
+    flex:none;
+  }
+  .brand-mark::after{
+    content:"";width:12px;height:12px;border-radius:3px;background:var(--bg);
+  }
+  .brand h1{
+    font-size:15px;font-weight:700;letter-spacing:0.2px;margin:0;line-height:1.2;
+  }
+  .brand span{display:block;font-size:11px;color:var(--text-faint);font-weight:500;letter-spacing:0.4px;text-transform:uppercase;margin-top:1px;}
+
+  .sidebar-section{margin-top:26px;}
+  .sidebar-label{
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
+    color:var(--text-faint);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;
+  }
+  textarea, input[type=text], input[type=number]{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:var(--radius);
+    padding:10px 12px;
+    font-family:var(--sans);
+    font-size:13.5px;
+    line-height:1.5;
+    resize:vertical;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  textarea:focus, input:focus{
+    outline:none;border-color:var(--c-planner);
+    box-shadow:0 0 0 3px rgba(110,140,255,0.15);
+  }
+  textarea{min-height:120px;}
+  .field-hint{font-size:11px;color:var(--text-faint);margin-top:6px;line-height:1.4;}
+
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .preset-btn{
+    font-family:var(--sans);
+    font-size:11.5px;
+    padding:5px 9px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .preset-btn:hover{border-color:var(--c-planner);color:var(--text);}
+
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stepper{display:flex;align-items:center;gap:8px;}
+  .stepper input{text-align:center;}
+  .stepper-btn{
+    width:30px;height:30px;flex:none;border-radius:8px;border:1px solid var(--border);
+    background:var(--surface-2);color:var(--text);cursor:pointer;font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+  }
+  .stepper-btn:hover{border-color:var(--c-planner);background:var(--surface-3);}
+
+  .run-btn{
+    width:100%;
+    margin-top:22px;
+    padding:13px 16px;
+    border-radius:var(--radius);
+    border:none;
+    background:linear-gradient(135deg, var(--c-planner), #8f6ef9);
+    color:#fff;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.2px;
+    cursor:pointer;
+    box-shadow:0 8px 24px -8px rgba(110,140,255,0.6);
+    transition:transform .15s, box-shadow .15s, opacity .15s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .run-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px -6px rgba(110,140,255,0.7);}
+  .run-btn:active{transform:translateY(0);}
+  .run-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
+  .run-btn.stop{background:linear-gradient(135deg, var(--c-critic), #c94b4b);box-shadow:0 8px 24px -8px rgba(255,110,110,0.5);}
+
+  .reset-btn{
+    width:100%;margin-top:8px;padding:9px 16px;border-radius:var(--radius);
+    border:1px solid var(--border);background:transparent;color:var(--text-dim);
+    font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;
+  }
+  .reset-btn:hover{border-color:var(--text-faint);color:var(--text);}
+
+  .status-card{
+    margin-top:24px;padding:14px;border-radius:var(--radius-lg);
+    background:var(--surface-2);border:1px solid var(--border);
+  }
+  .status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .status-row:last-child{margin-bottom:0;}
+  .status-key{font-size:11.5px;color:var(--text-faint);font-weight:600;}
+  .status-val{font-size:12.5px;font-weight:700;color:var(--text);text-align:right;}
+  .agent-pill{
+    display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 7px;border-radius:999px;
+    font-size:11.5px;font-weight:700;background:rgba(255,255,255,0.04);
+    border:1px solid var(--border);
+  }
+  .agent-dot{width:7px;height:7px;border-radius:50%;flex:none;}
+  .pulse{animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.55;transform:scale(1.3);}}
+
+  .mini-bar{height:6px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin-top:4px;}
+  .mini-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--c-evaluator),var(--good));transition:width .5s ease;}
+
+  .legend{margin-top:22px;display:flex;flex-direction:column;gap:7px;}
+  .legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim);}
+  .legend-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .legend-item b{color:var(--text);font-weight:600;}
+
+  /* ---------------- Main ---------------- */
+  .main{padding:26px 30px 80px;max-width:1180px;}
+  @media (max-width: 700px){.main{padding:18px 14px 60px;}}
+
+  .top-hero{margin-bottom:22px;}
+  .top-hero h2{font-size:22px;margin:0 0 6px;font-weight:800;letter-spacing:-0.2px;}
+  .top-hero p{margin:0;color:var(--text-dim);font-size:13.5px;max-width:640px;line-height:1.55;}
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg);
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+  .panel-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--text);display:flex;align-items:center;gap:8px;}
+  .panel-title .num{color:var(--text-faint);font-weight:700;}
+  .panel-sub{font-size:12px;color:var(--text-faint);}
+
+  /* Pipeline diagram */
+  .diagram-wrap{width:100%;overflow-x:auto;}
+  svg.pipeline{width:100%;min-width:640px;height:auto;display:block;}
+  .node-box{fill:var(--surface-2);stroke:var(--border);stroke-width:1.5;transition:all .3s;}
+  .node-label{font-family:var(--sans);font-weight:700;fill:var(--text);}
+  .node-sub{font-family:var(--sans);fill:var(--text-faint);font-weight:600;}
+  .edge-path{fill:none;stroke:var(--border);stroke-width:1.6;transition:stroke .3s, stroke-width .3s;}
+  .edge-path.flowing{stroke-dasharray:6 5;animation:dash 1s linear infinite;}
+  @keyframes dash{to{stroke-dashoffset:-22;}}
+  .edge-label{font-family:var(--mono);font-size:9.5px;fill:var(--text-faint);}
+  .node-active .node-box{filter:drop-shadow(0 0 10px currentColor);}
+  .node-glow-ring{fill:none;stroke-width:2;opacity:0;transition:opacity .3s;}
+  .node-active .node-glow-ring{opacity:1;}
+
+  /* Agent roster */
+  .agent-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(210px,1fr));gap:12px;}
+  .agent-card{
+    border:1px solid var(--border);border-radius:var(--radius);padding:12px 13px;background:var(--surface-2);
+    border-left-width:3px;
+  }
+  .agent-card h4{margin:0 0 5px;font-size:13px;display:flex;align-items:center;gap:6px;}
+  .agent-card p{margin:0;font-size:11.5px;color:var(--text-dim);line-height:1.5;}
+
+  /* Activity log */
+  .log-box{
+    background:#080B12;border:1px solid var(--border-soft);border-radius:var(--radius);
+    padding:12px 14px;height:260px;overflow-y:auto;font-family:var(--mono);font-size:12px;line-height:1.65;
+  }
+  .log-line{display:flex;gap:8px;margin-bottom:3px;}
+  .log-time{color:var(--text-faint);flex:none;}
+  .log-tag{flex:none;font-weight:700;}
+  .log-msg{color:var(--text-dim);word-break:break-word;}
+  .log-empty{color:var(--text-faint);font-style:italic;}
+
+  /* Round cards */
+  .round-card{
+    border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:14px;overflow:hidden;background:var(--surface-2);
+  }
+  .round-header{
+    display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;
+    background:var(--surface-3);gap:10px;flex-wrap:wrap;
+  }
+  .round-header:hover{background:#25304A;}
+  .round-header-left{display:flex;align-items:center;gap:10px;}
+  .round-num{font-weight:800;font-size:13px;}
+  .score-badge{
+    font-family:var(--mono);font-weight:700;font-size:12.5px;padding:3px 9px;border-radius:6px;
+    background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  }
+  .delta-tag{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;}
+  .delta-up{color:var(--good);background:rgba(79,214,156,0.12);}
+  .delta-down{color:var(--bad);background:rgba(255,110,110,0.12);}
+  .delta-flat{color:var(--text-faint);background:rgba(255,255,255,0.04);}
+  .chev{color:var(--text-faint);transition:transform .2s;font-size:12px;}
+  .round-body{padding:16px;display:none;}
+  .round-body.open{display:block;}
+  .subblock{margin-bottom:16px;}
+  .subblock:last-child{margin-bottom:0;}
+  .subblock-title{
+    font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;
+    display:flex;align-items:center;gap:6px;margin-bottom:7px;
+  }
+  .code-block{
+    background:#080B12;border:1px solid var(--border-soft);border-radius:8px;padding:12px 14px;
+    font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;
+    max-height:340px;overflow-y:auto;color:#D8E1F5;
+  }
+  .text-block{
+    background:var(--surface-3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;
+    font-size:12.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--text-dim);
+    max-height:280px;overflow-y:auto;
+  }
+
+  .chart-wrap{width:100%;overflow-x:auto;}
+  svg.chart{width:100%;min-width:500px;height:auto;}
+
+  .empty-state{
+    text-align:center;padding:50px 20px;color:var(--text-faint);
+  }
+  .empty-state .glyph{font-size:34px;margin-bottom:10px;opacity:0.5;}
+  .empty-state p{font-size:13px;max-width:400px;margin:6px auto 0;line-height:1.6;}
+
+  .final-banner{
+    border-radius:var(--radius-lg);padding:22px;margin-bottom:20px;
+    background:linear-gradient(135deg, rgba(79,214,156,0.1), rgba(110,140,255,0.06));
+    border:1px solid rgba(79,214,156,0.35);
+  }
+  .final-banner h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:8px;}
+  .final-banner p{margin:0;color:var(--text-dim);font-size:13px;line-height:1.6;}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:16px;}
+  .stat-box{background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:10px;padding:11px 12px;}
+  .stat-box .v{font-size:19px;font-weight:800;font-family:var(--mono);}
+  .stat-box .k{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;}
+
+  .copy-btn{
+    font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;border:1px solid var(--border);
+    background:var(--surface-3);color:var(--text-dim);cursor:pointer;transition:all .15s;
+  }
+  .copy-btn:hover{color:var(--text);border-color:var(--c-planner);}
+
+  .error-banner{
+    border:1px solid rgba(255,110,110,0.4);background:rgba(255,110,110,0.08);border-radius:var(--radius);
+    padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#FFB3B3;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .error-banner button{
+    font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:6px;border:1px solid rgba(255,110,110,0.5);
+    background:rgba(255,110,110,0.15);color:#FFD6D6;cursor:pointer;
+  }
+
+  .perf-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .perf-table th, .perf-table td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border-soft);}
+  .perf-table th{color:var(--text-faint);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;}
+  .perf-table td{color:var(--text-dim);}
+  .perf-table td:first-child{color:var(--text);font-weight:700;}
+
+  .arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:700px){.arch-grid{grid-template-columns:1fr;}}
+  .arch-grid h5{margin:0 0 8px;font-size:12.5px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-faint);}
+  .arch-grid ul{margin:0;padding-left:18px;color:var(--text-dim);font-size:12.5px;line-height:1.7;}
+  .arch-grid li{margin-bottom:4px;}
+
+  .prompt-list{display:flex;flex-direction:column;gap:8px;}
+  .prompt-item{
+    background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+    font-family:var(--mono);font-size:12px;color:var(--text-dim);cursor:pointer;transition:all .15s;
+  }
+  .prompt-item:hover{border-color:var(--c-planner);color:var(--text);}
+
+  .footer-note{text-align:center;color:var(--text-faint);font-size:11.5px;margin-top:30px;}
+
+  .kbd{font-family:var(--mono);background:var(--surface-3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10.5px;}
+
+  .spinner{
+    width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;
+    animation:spin .7s linear infinite;flex:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001s !important; transition-duration:.001s !important;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <h1>Autonomous Agent Studio<span>Code refinement pipeline</span></h1>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Function / Algorithm Spec</div>
+      <textarea id="specInput" placeholder="Describe the function to build, including language, inputs/outputs, and any constraints. e.g. 'In Python, write find_longest_palindrome(s) that returns the longest palindromic substring. Must run in O(n^2) or better, handle empty strings, unicode, and ties by returning the first occurrence.'"></textarea>
+      <div class="presets" id="presetRow"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Stop Conditions</div>
+      <div class="row-2">
+        <div>
+          <div class="field-hint" style="margin:0 0 5px;">Target score (/10)</div>
+          <div class="stepper">
+            <button class="stepper-btn" id="thDown" type="button">–</button>
+            <input type="number" id="thresholdInput" value="9" min="5" max="10" step="0.5">
+            <button class="stepper-btn" id="thUp" type="button">+</button>
+          </div>
+        </div>
+        <div>
+          <div class="field-hint" style="margin:0 0 5px;">Hard cap (rounds)</div>
+          <div class="stepper">
+            <button class="stepper-btn" id="capDown" type="button">–</button>
+            <input type="number" id="capInput" value="6" min="3" max="10" step="1">
+            <button class="stepper-btn" id="capUp" type="button">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="field-hint">Loop stops on whichever fires first: score ≥ target, plateau (&lt;0.3 gain, 2 straight rounds), or the hard cap as a safety fallback.</div>
+    </div>
+
+    <button class="run-btn" id="runBtn">▶ Run Pipeline</button>
+    <button class="reset-btn" id="resetBtn">Reset session</button>
+
+    <div class="status-card">
+      <div class="status-row">
+        <span class="status-key">STATUS</span>
+        <span class="status-val" id="statusVal">Idle</span>
+      </div>
+      <div class="status-row">
+        <span class="status-key">ACTIVE AGENT</span>
+        <span class="status-val" id="activeAgentVal">—</span>
+      </div>
+      <div class="status-row">
+        <span class="status-key">ROUND</span>
+        <span class="status-val" id="roundVal">—</span>
+      </div>
+      <div class="status-row">
+        <span class="status-key">LATEST SCORE</span>
+        <span class="status-val" id="scoreVal">—</span>
+      </div>
+      <div class="mini-bar"><div class="mini-bar-fill" id="scoreBar" style="width:0%"></div></div>
+      <div class="status-row" style="margin-top:12px;">
+        <span class="status-key">API CALLS</span>
+        <span class="status-val" id="callsVal">0</span>
+      </div>
+      <div class="status-row">
+        <span class="status-key">RETRIES</span>
+        <span class="status-val" id="retriesVal">0</span>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--c-planner)"></span><b>Planner</b> — breaks spec into requirements & tests</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--c-executor)"></span><b>Executor</b> — writes the first implementation</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--c-evaluator)"></span><b>Evaluator</b> — scores correctness each round</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--c-critic)"></span><b>Critic</b> — finds concrete weaknesses</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--c-improver)"></span><b>Improver</b> — rewrites code to fix them</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--c-memory)"></span><b>Memory Mgr</b> — carries lessons forward</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--c-reviewer)"></span><b>Final Reviewer</b> — signs off the result</div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="top-hero">
+      <h2>Live multi-agent code refinement</h2>
+      <p>Seven specialized agents plan, write, evaluate, critique, improve and remember — in a real loop, against the live Claude API. The number of rounds is decided at runtime by the stop-check, not chosen in advance.</p>
+    </div>
+
+    <div id="errorSlot"></div>
+
+    <!-- Pipeline diagram -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">01</span> Workflow — the loop</div>
+        <div class="panel-sub" id="diagramCaption">Waiting to start</div>
+      </div>
+      <div class="diagram-wrap">
+        <svg class="pipeline" viewBox="0 0 980 460" xmlns="http://www.w3.org/2000/svg" id="pipelineSvg">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--text-faint)"/>
+            </marker>
+          </defs>
+
+          <!-- edges (drawn first, under nodes) -->
+          <g id="edgesLayer"></g>
+          <!-- nodes -->
+          <g id="nodesLayer"></g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Agent roster -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">02</span> Agent roster & responsibilities</div>
+      </div>
+      <div class="agent-grid" id="agentGrid"></div>
+    </div>
+
+    <!-- Activity log -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">03</span> Activity log</div>
+        <div class="panel-sub">Every API call, in order, timestamped</div>
+      </div>
+      <div class="log-box" id="logBox"><div class="log-empty">No activity yet. Configure a spec and press Run Pipeline.</div></div>
+    </div>
+
+    <!-- Score progression chart -->
+    <div class="panel" id="chartPanel" style="display:none;">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">04</span> Round-over-round improvement</div>
+        <div class="panel-sub" id="chartCaption"></div>
+      </div>
+      <div class="chart-wrap"><svg class="chart" id="chartSvg" viewBox="0 0 900 220"></svg></div>
+    </div>
+
+    <!-- Iteration history -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">05</span> Iteration history</div>
+        <div class="panel-sub" id="roundIndicator">Round — checking stop condition…</div>
+      </div>
+      <div id="historyList">
+        <div class="empty-state">
+          <div class="glyph">◌</div>
+          <p>Iteration history will appear here once the pipeline starts running. Each round shows the evaluator's score, the critic's findings, the improver's rewrite, and the memory update — all literal model output.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Memory panel -->
+    <div class="panel" id="memoryPanel" style="display:none;">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">06</span> Persistent memory</div>
+        <div class="panel-sub">Carried into every subsequent Evaluator / Critic / Improver call</div>
+      </div>
+      <div class="text-block" id="memoryBox" style="max-height:220px;"></div>
+    </div>
+
+    <!-- Final summary -->
+    <div id="finalSlot"></div>
+
+    <!-- Static explainer -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><span class="num">07</span> How the stop-check governs information flow</div>
+      </div>
+      <div class="text-block" style="max-height:none;">
+Each round follows the same information path: <b style="color:var(--text)">Evaluator</b> reads the current draft plus the full rubric (the Planner's requirements/tests) and produces a literal score + written evaluation. That score is compared to the previous round's score to compute a delta, which is checked — in order — against three conditions: (1) <b style="color:var(--text)">plateau</b>, two consecutive rounds improving by less than the delta threshold; (2) <b style="color:var(--text)">threshold</b>, the score crossing the target set in the sidebar; (3) <b style="color:var(--text)">hard cap</b>, a safety fallback so the loop can never run forever.
+
+If none fire, the round continues: <b style="color:var(--text)">Critic</b> receives the same draft plus the Evaluator's report and produces a focused, literal critique. <b style="color:var(--text)">Improver</b> receives the draft, the evaluation, and the critique, and rewrites the code. <b style="color:var(--text)">Memory Manager</b> then distills what was learned this round into a short, persistent note that is prepended to every future Evaluator/Critic/Improver call — so later rounds don't repeat earlier mistakes. The new draft becomes next round's input to the Evaluator, closing the loop.
+
+If a condition fires, the loop breaks immediately and branches to the <b style="color:var(--text)">Final Reviewer</b>, who receives the full history (every score, critique and memory note) and produces the polished final code plus a sign-off — never a hardcoded template, always a live call.
+      </div>
+    </div>
+
+    <div class="footer-note">Autonomous Agent Studio — outputs are model-generated. Review before running any code in production.</div>
+  </main>
+</div>
+
+<script>
+(function(){
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const MODEL = "claude-sonnet-4-6";
+const MAX_TOKENS = 1500;
+const DELTA_THRESHOLD = 0.3;
+const MAX_RETRIES = 3;
+
+const AGENTS = {
+  planner:   { name:"Planner",        color:"var(--c-planner)",   short:"PLN", desc:"Breaks the free-text spec into concrete, testable requirements: inputs/outputs, edge cases, complexity constraints, and an acceptance checklist the Evaluator will score against." },
+  executor:  { name:"Executor",       color:"var(--c-executor)",  short:"EXE", desc:"Writes the first working implementation against the Planner's requirements — a real, runnable first draft, not a stub." },
+  evaluator: { name:"Evaluator",      color:"var(--c-evaluator)", short:"EVL", desc:"Scores the current draft 1–10 on correctness first, then quality/efficiency, against the Planner's checklist. Emits the literal score the stop-check reads every round." },
+  critic:    { name:"Critic",         color:"var(--c-critic)",    short:"CRT", desc:"Reads the draft and the Evaluator's report, then pinpoints specific, actionable weaknesses — missed edge cases, bugs, bad complexity, unclear naming." },
+  improver:  { name:"Improver",       color:"var(--c-improver)",  short:"IMP", desc:"Rewrites the code to resolve every issue the Critic raised, using the Evaluator's report and persistent memory as additional context." },
+  memory:    { name:"Memory Manager", color:"var(--c-memory)",    short:"MEM", desc:"Distills each round into a short durable note — recurring mistakes, confirmed constraints — and threads it into every later round's prompts." },
+  reviewer:  { name:"Final Reviewer", color:"var(--c-reviewer)",  short:"REV", desc:"Activates only once a stop condition fires. Reviews the full round history and delivers the final polished code with a sign-off summary." },
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {
+  running:false,
+  spec:"",
+  threshold:9,
+  hardCap:6,
+  round:0,
+  history:[],       // {round, draft, score, evalText, criticText, improveText, memoryText, delta}
+  memory:"",
+  planText:"",
+  finalCode:"",
+  finalText:"",
+  stopReason:null,
+  apiCalls:0,
+  retries:0,
+  startTime:null,
+  endTime:null,
+  activeAgent:null,
+  aborted:false,
+};
+
+/* ============================================================
+   DOM refs
+   ============================================================ */
+const $ = (id)=>document.getElementById(id);
+const specInput = $("specInput");
+const thresholdInput = $("thresholdInput");
+const capInput = $("capInput");
+const runBtn = $("runBtn");
+const resetBtn = $("resetBtn");
+const logBox = $("logBox");
+const historyList = $("historyList");
+const errorSlot = $("errorSlot");
+const finalSlot = $("finalSlot");
+const memoryPanel = $("memoryPanel");
+const memoryBox = $("memoryBox");
+const chartPanel = $("chartPanel");
+const chartSvg = $("chartSvg");
+const chartCaption = $("chartCaption");
+const roundIndicator = $("roundIndicator");
+const diagramCaption = $("diagramCaption");
+
+/* ============================================================
+   PRESETS
+   ============================================================ */
+const PRESETS = [
+  {label:"Palindrome finder", text:"In Python, write find_longest_palindrome(s) that returns the longest palindromic substring of s. Must run in O(n^2) time or better, handle empty strings, single characters, and unicode, and break ties by returning the earliest occurrence."},
+  {label:"Rate limiter", text:"In JavaScript, implement a class TokenBucketLimiter(capacity, refillRatePerSec) with a method tryConsume(tokens=1) returning true/false. Must be thread-safe for a single-process event loop, refill based on elapsed real time, and handle capacity of 0 and fractional refill rates correctly."},
+  {label:"LRU cache", text:"In Python, implement class LRUCache(capacity) with get(key) and put(key, value), both O(1) average time. Must evict the least recently used entry when full, support capacity of 1, and raise a clear error for non-positive capacity."},
+  {label:"Merge intervals", text:"In TypeScript, write mergeIntervals(intervals: [number, number][]): [number, number][] that merges all overlapping intervals. Handle empty input, unsorted input, single-point intervals, and fully nested intervals. Must run in O(n log n)."},
+];
+const presetRow = $("presetRow");
+PRESETS.forEach(p=>{
+  const b = document.createElement("button");
+  b.className="preset-btn"; b.type="button"; b.textContent=p.label;
+  b.onclick=()=>{ specInput.value = p.text; };
+  presetRow.appendChild(b);
+});
+
+/* ============================================================
+   Agent roster cards
+   ============================================================ */
+const agentGrid = $("agentGrid");
+Object.entries(AGENTS).forEach(([key,a])=>{
+  const c = document.createElement("div");
+  c.className="agent-card";
+  c.style.borderLeftColor = a.color;
+  c.innerHTML = `<h4><span style="width:8px;height:8px;border-radius:50%;background:${a.color};display:inline-block;"></span>${a.name}</h4><p>${a.desc}</p>`;
+  agentGrid.appendChild(c);
+});
+
+/* ============================================================
+   Steppers
+   ============================================================ */
+$("thUp").onclick=()=>{ thresholdInput.value = Math.min(10, (+thresholdInput.value+0.5)).toFixed(1); };
+$("thDown").onclick=()=>{ thresholdInput.value = Math.max(5, (+thresholdInput.value-0.5)).toFixed(1); };
+$("capUp").onclick=()=>{ capInput.value = Math.min(10, (+capInput.value+1)); };
+$("capDown").onclick=()=>{ capInput.value = Math.max(3, (+capInput.value-1)); };
+
+/* ============================================================
+   Pipeline diagram (SVG) — built once, updated via classes
+   ============================================================ */
+const NODES = {
+  planner:   {x:90,  y:70,  w:140, h:56, key:"planner"},
+  executor:  {x:90,  y:220, w:140, h:56, key:"executor"},
+  evaluator: {x:430, y:70,  w:140, h:56, key:"evaluator"},
+  critic:    {x:660, y:210, w:140, h:56, key:"critic"},
+  improver:  {x:430, y:350, w:140, h:56, key:"improver"},
+  memory:    {x:820, y:70,  w:130, h:56, key:"memory"},
+  reviewer:  {x:820, y:350, w:130, h:56, key:"reviewer"},
+};
+
+function buildDiagram(){
+  const edgesLayer = $("edgesLayer");
+  const nodesLayer = $("nodesLayer");
+  edgesLayer.innerHTML=""; nodesLayer.innerHTML="";
+
+  function edge(id, d, label, dashed){
+    const p = document.createElementNS("http://www.w3.org/2000/svg","path");
+    p.setAttribute("d", d);
+    p.setAttribute("class","edge-path");
+    p.setAttribute("id","edge-"+id);
+    p.setAttribute("marker-end","url(#arrow)");
+    if(dashed) p.setAttribute("stroke-dasharray","4 4");
+    edgesLayer.appendChild(p);
+    if(label){
+      const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+      t.setAttribute("class","edge-label");
+      const pt = document.createElementNS("http://www.w3.org/2000/svg","path");
+      edgesLayer.appendChild(t);
+    }
+  }
+
+  // Planner -> Executor
+  edge("plan-exec", `M 160 126 L 160 220`, null);
+  // Executor -> Evaluator (entry into loop)
+  edge("exec-eval", `M 230 240 C 320 240, 320 100, 430 98`, null);
+  // Evaluator -> Critic
+  edge("eval-crit", `M 570 100 C 650 130, 680 160, 700 210`, null);
+  // Critic -> Improver
+  edge("crit-imp", `M 700 266 C 680 310, 600 340, 570 366`, null);
+  // Improver -> Evaluator (RETURN ARROW, the real loop)
+  edge("imp-eval", `M 460 350 C 380 280, 380 160, 425 100`, null);
+  // Memory bidirectional touches (dashed) to evaluator/critic/improver
+  edge("mem-eval", `M 820 90 C 700 60, 600 60, 573 78`, null, true);
+  edge("mem-crit", `M 850 126 C 850 165, 800 190, 738 208`, null, true);
+  edge("mem-imp", `M 820 380 C 700 400, 600 400, 573 388`, null, true);
+  // Branch to Final Reviewer (only lights up on stop)
+  edge("branch-rev", `M 700 266 C 780 300, 830 320, 878 350`, null);
+
+  Object.entries(NODES).forEach(([key,n])=>{
+    const a = AGENTS[key];
+    const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.setAttribute("id","node-"+key);
+    g.setAttribute("class","node "+("node-"+key));
+    g.style.color = a.color;
+
+    const ring = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    ring.setAttribute("class","node-glow-ring");
+    ring.setAttribute("x", n.x-4); ring.setAttribute("y", n.y-4);
+    ring.setAttribute("width", n.w+8); ring.setAttribute("height", n.h+8);
+    ring.setAttribute("rx", 12); ring.setAttribute("stroke","currentColor");
+    g.appendChild(ring);
+
+    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("class","node-box");
+    rect.setAttribute("x", n.x); rect.setAttribute("y", n.y);
+    rect.setAttribute("width", n.w); rect.setAttribute("height", n.h);
+    rect.setAttribute("rx", 10);
+    g.appendChild(rect);
+
+    const dot = document.createElementNS("http://www.w3.org/2000/svg","circle");
+    dot.setAttribute("cx", n.x+16); dot.setAttribute("cy", n.y+18); dot.setAttribute("r",5);
+    dot.setAttribute("fill", a.color);
+    g.appendChild(dot);
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg","text");
+    label.setAttribute("class","node-label");
+    label.setAttribute("x", n.x+30); label.setAttribute("y", n.y+23);
+    label.setAttribute("font-size","13");
+    label.textContent = a.name;
+    g.appendChild(label);
+
+    const sub = document.createElementNS("http://www.w3.org/2000/svg","text");
+    sub.setAttribute("class","node-sub");
+    sub.setAttribute("x", n.x+16); sub.setAttribute("y", n.y+42);
+    sub.setAttribute("font-size","10");
+    sub.textContent = key==="reviewer" ? "on stop" : (key==="memory" ? "every round" : "");
+    g.appendChild(sub);
+
+    nodesLayer.appendChild(g);
+  });
+
+  // loop label
+  const loopLabel = document.createElementNS("http://www.w3.org/2000/svg","text");
+  loopLabel.setAttribute("x","560"); loopLabel.setAttribute("y","300");
+  loopLabel.setAttribute("text-anchor","middle");
+  loopLabel.setAttribute("class","edge-label");
+  loopLabel.setAttribute("font-size","11");
+  loopLabel.setAttribute("fill","var(--text-faint)");
+  loopLabel.textContent = "◈ evaluate → critique → improve → back to evaluate ◈";
+  $("edgesLayer").appendChild(loopLabel);
+}
+buildDiagram();
+
+function setActiveAgent(key, extraCaption){
+  state.activeAgent = key;
+  document.querySelectorAll(".node").forEach(n=>n.classList.remove("node-active"));
+  document.querySelectorAll(".edge-path").forEach(e=>e.classList.remove("flowing"));
+  if(key){
+    const node = $("node-"+key);
+    if(node) node.classList.add("node-active");
+    $("activeAgentVal").innerHTML = `<span class="agent-pill"><span class="agent-dot pulse" style="background:${AGENTS[key].color}"></span>${AGENTS[key].name}</span>`;
+    diagramCaption.textContent = extraCaption || (AGENTS[key].name + " is working…");
+    // flow relevant edges
+    const flowMap = {
+      planner:["plan-exec"], executor:["exec-eval"], evaluator:["eval-crit","imp-eval"],
+      critic:["crit-imp"], improver:[], memory:["mem-eval","mem-crit","mem-imp"], reviewer:["branch-rev"]
+    };
+    (flowMap[key]||[]).forEach(id=>{ const e=$("edge-"+id); if(e) e.classList.add("flowing"); });
+  } else {
+    $("activeAgentVal").textContent = "—";
+    diagramCaption.textContent = "Idle";
+  }
+}
+
+/* ============================================================
+   Logging
+   ============================================================ */
+function log(agentKey, msg){
+  if(logBox.querySelector(".log-empty")) logBox.innerHTML="";
+  const line = document.createElement("div");
+  line.className="log-line";
+  const time = new Date().toLocaleTimeString([], {hour12:false});
+  const a = agentKey ? AGENTS[agentKey] : null;
+  line.innerHTML = `<span class="log-time">${time}</span><span class="log-tag" style="color:${a?a.color:'var(--text-dim)'}">${a?('['+a.short+']'):'[SYS]'}</span><span class="log-msg"></span>`;
+  line.querySelector(".log-msg").textContent = msg;
+  logBox.appendChild(line);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+/* ============================================================
+   Status panel updates
+   ============================================================ */
+function updateStatus(){
+  $("statusVal").textContent = state.running ? "Running" : (state.stopReason ? "Complete" : "Idle");
+  $("roundVal").textContent = state.round ? ("Round "+state.round) : "—";
+  const last = state.history[state.history.length-1];
+  $("scoreVal").textContent = last ? last.score.toFixed(1)+" / 10" : "—";
+  $("scoreBar").style.width = last ? Math.min(100, last.score/10*100)+"%" : "0%";
+  $("callsVal").textContent = state.apiCalls;
+  $("retriesVal").textContent = state.retries;
+  roundIndicator.textContent = state.running
+    ? `Round ${state.round} — checking stop condition…`
+    : (state.stopReason ? `Finished after ${state.round} round${state.round===1?'':'s'}` : "Round — checking stop condition…");
+}
+
+/* ============================================================
+   Claude API call w/ retries
+   ============================================================ */
+async function callClaude(system, userMsg, maxTokens){
+  let lastErr = null;
+  for(let attempt=0; attempt<=MAX_RETRIES; attempt++){
+    if(state.aborted) throw new Error("aborted");
+    try{
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: maxTokens || MAX_TOKENS,
+          system: system,
+          messages: [{role:"user", content: userMsg}]
+        })
+      });
+      if(!resp.ok){
+        const errText = await resp.text().catch(()=> "");
+        throw new Error(`API error ${resp.status}: ${errText.slice(0,200)}`);
+      }
+      const data = await resp.json();
+      state.apiCalls++;
+      updateStatus();
+      const textBlocks = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text);
+      const text = textBlocks.join("\n").trim();
+      if(!text) throw new Error("Empty response from model");
+      return text;
+    } catch(err){
+      lastErr = err;
+      if(attempt < MAX_RETRIES){
+        state.retries++;
+        updateStatus();
+        log(null, `Retrying after error: ${err.message} (attempt ${attempt+1}/${MAX_RETRIES})`);
+        await new Promise(r=>setTimeout(r, 600 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+/* ============================================================
+   Parsing helpers
+   ============================================================ */
+function extractScore(text){
+  const m = text.match(/SCORE:\s*([\d]+(?:\.\d+)?)/i);
+  if(m) return Math.max(0, Math.min(10, parseFloat(m[1])));
+  const m2 = text.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
+  if(m2) return Math.max(0, Math.min(10, parseFloat(m2[1])));
+  return 5; // conservative fallback if model didn't follow format
+}
+function extractCode(text){
+  const m = text.match(/```[a-zA-Z0-9_+-]*\n([\s\S]*?)```/);
+  if(m) return m[1].trim();
+  return text.trim();
+}
+function escapeHtml(s){
+  return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* ============================================================
+   SYSTEM PROMPTS
+   ============================================================ */
+const SYS = {
+  planner: `You are the Planner agent in an autonomous code-generation pipeline. You receive a free-text specification for a single function or algorithm.
+
+Your job: produce a tight, testable requirements breakdown that a downstream Evaluator will score code against. Include:
+1. RESTATED GOAL — one sentence.
+2. SIGNATURE — the expected function/class signature and language, inferred if not explicit.
+3. REQUIREMENTS — a numbered list of concrete, checkable behaviors.
+4. EDGE CASES — a numbered list of edge cases the implementation must handle (empty input, boundary values, unusual types, etc. — be specific to this spec).
+5. COMPLEXITY / PERFORMANCE — any stated or reasonably implied constraints.
+6. ACCEPTANCE CHECKLIST — a short checklist an evaluator can tick off.
+
+Be concise but complete. Do not write any code yourself. Do not pad with generic advice unrelated to this spec.`,
+
+  executor: `You are the Executor agent in an autonomous code-generation pipeline. You receive a requirements plan from the Planner. Write the first real, working implementation.
+
+Rules:
+- Output the code in a single fenced code block with the correct language tag.
+- The code must be complete and runnable, not pseudocode or a stub.
+- Add brief inline comments only where they clarify non-obvious logic.
+- After the code block, add a short "NOTES:" section (2-4 sentences) on your approach and any known limitations of this first draft.
+- Do not explain basic language syntax. Be direct and professional.`,
+
+  evaluator: `You are the Evaluator agent in an autonomous code-generation pipeline. You score a candidate implementation against the Planner's requirements. Correctness against the stated requirements and edge cases is the primary and most heavily weighted criterion; code quality and efficiency are secondary factors that should nudge the score, not dominate it.
+
+You MUST respond in exactly this structure, with no preamble:
+
+SCORE: <a number from 0 to 10, one decimal place, e.g. 7.5>
+CORRECTNESS: <does it meet the stated requirements? Be specific about what passes and what fails.>
+EDGE CASES: <which listed edge cases are handled correctly, which are not>
+QUALITY: <brief note on readability, structure, efficiency — secondary to correctness>
+SUMMARY: <2-3 sentence overall verdict, direct and honest>
+
+Be strict and specific. Do not inflate scores. A 9+ should be reserved for code that is genuinely correct and handles every stated edge case. If the same class of bug recurs across rounds (per any memory notes provided), call that out explicitly and do not raise the score until it is actually fixed.`,
+
+  critic: `You are the Critic agent in an autonomous code-generation pipeline. You receive the current code draft and the Evaluator's report for this round. Your job is NOT to re-score — it is to produce a sharp, actionable critique the Improver can act on directly.
+
+Structure your response as:
+TOP ISSUES: <a ranked, numbered list of the most important concrete problems — bugs, unhandled edge cases, complexity issues, unclear or risky code — ranked by severity, most severe first. 2-5 items. Each item should name the specific problem and, where useful, the specific line/logic at fault.>
+QUICK WINS: <optional short list of small, low-risk improvements not covered above>
+
+Be concrete and specific to this code, never generic advice like "add more comments" unless comments are genuinely the issue. If the Evaluator's report and any memory notes show a recurring problem, lead with it.`,
+
+  improver: `You are the Improver agent in an autonomous code-generation pipeline. You receive the current code draft, the Evaluator's report, the Critic's findings, and any persistent memory notes from earlier rounds. Rewrite the code to resolve every issue raised, while preserving what already works.
+
+Rules:
+- Output the FULL revised code in a single fenced code block with the correct language tag — not a diff, not a snippet, the complete file/function.
+- After the code block, add a short "CHANGES:" section as a numbered list mapping each fix to the issue it resolves.
+- Do not introduce new unrelated features. Stay scoped to the spec and the raised issues.
+- If a critique point was actually already handled correctly, briefly note that you kept it as-is rather than making a needless change.`,
+
+  memory: `You are the Memory Manager agent in an autonomous code-generation pipeline. After each round you receive the round's evaluation, critique, and improvement summary. Distill this into a short, durable memory note (3-6 bullet points max) that will be prepended to every future round's prompts.
+
+Focus only on information with lasting value for future rounds: recurring bugs or misunderstandings, constraints that were clarified, decisions that were made and should not be re-litigated, or patterns of mistake across rounds. Do not restate the full critique — compress it. If nothing new and durable happened this round, say so briefly rather than padding.
+
+Output only the bullet points, nothing else.`,
+
+  reviewer: `You are the Final Reviewer agent in an autonomous code-generation pipeline. The loop has stopped (threshold reached, plateau detected, or safety cap hit). You receive the full round history — every score, critique, and the persistent memory — plus the latest code draft.
+
+Produce a final sign-off in this structure:
+FINAL CODE:
+\`\`\`<language>
+<the complete, polished final implementation — apply any last small, safe polish, but do not introduce large changes at this stage>
+\`\`\`
+
+CONFIDENCE: <a 1-10 confidence rating in this code being production-ready, with one sentence justifying it>
+REMAINING RISKS: <bullet list of anything not fully verified or any residual risk, or "None identified" if truly none>
+SUMMARY: <3-4 sentence executive summary of the whole process and the final result, referencing how the score evolved>`,
+};
+
+/* ============================================================
+   UI: history / round cards
+   ============================================================ */
+function deltaTag(delta){
+  if(delta===null || delta===undefined) return `<span class="delta-tag delta-flat">first round</span>`;
+  if(delta > 0.05) return `<span class="delta-tag delta-up">▲ +${delta.toFixed(1)}</span>`;
+  if(delta < -0.05) return `<span class="delta-tag delta-down">▼ ${delta.toFixed(1)}</span>`;
+  return `<span class="delta-tag delta-flat">± ${delta.toFixed(1)}</span>`;
+}
+
+function renderHistory(){
+  if(state.history.length===0) return;
+  historyList.innerHTML="";
+  state.history.forEach((r, idx)=>{
+    const card = document.createElement("div");
+    card.className="round-card";
+    const isLast = idx===state.history.length-1;
+    card.innerHTML = `
+      <div class="round-header" data-idx="${idx}">
+        <div class="round-header-left">
+          <span class="round-num">Round ${r.round}</span>
+          <span class="score-badge" style="color:var(--c-evaluator)">${r.score.toFixed(1)} / 10</span>
+          ${deltaTag(r.delta)}
+        </div>
+        <span class="chev">${isLast ? '▾' : '▸'}</span>
+      </div>
+      <div class="round-body ${isLast ? 'open':''}">
+        <div class="subblock">
+          <div class="subblock-title" style="color:var(--c-evaluator)">Evaluator report</div>
+          <div class="text-block">${escapeHtml(r.evalText)}</div>
+        </div>
+        ${r.criticText ? `
+        <div class="subblock">
+          <div class="subblock-title" style="color:var(--c-critic)">Critic findings</div>
+          <div class="text-block">${escapeHtml(r.criticText)}</div>
+        </div>` : ``}
+        ${r.improveText ? `
+        <div class="subblock">
+          <div class="subblock-title" style="color:var(--c-improver)">Improver rewrite</div>
+          <div class="code-block">${escapeHtml(r.draft)}</div>
+        </div>` : `
+        <div class="subblock">
+          <div class="subblock-title" style="color:var(--c-executor)">Draft evaluated this round</div>
+          <div class="code-block">${escapeHtml(r.draft)}</div>
+        </div>`}
+        ${r.memoryText ? `
+        <div class="subblock">
+          <div class="subblock-title" style="color:var(--c-memory)">Memory update</div>
+          <div class="text-block">${escapeHtml(r.memoryText)}</div>
+        </div>` : ``}
+      </div>
+    `;
+    historyList.appendChild(card);
+  });
+  historyList.querySelectorAll(".round-header").forEach(h=>{
+    h.onclick = ()=>{
+      const body = h.nextElementSibling;
+      body.classList.toggle("open");
+      h.querySelector(".chev").textContent = body.classList.contains("open") ? "▾" : "▸";
+    };
+  });
+  renderChart();
+}
+
+function renderChart(){
+  chartPanel.style.display = "block";
+  const w=900,h=220,padL=40,padR=20,padT=20,padB=30;
+  const pts = state.history.map(r=>r.score);
+  const n = pts.length;
+  const maxX = w-padL-padR, maxY = h-padT-padB;
+  const xFor = (i)=> padL + (n===1?maxX/2:(i/(n-1))*maxX);
+  const yFor = (v)=> padT + maxY - (v/10)*maxY;
+
+  let grid="";
+  for(let g=0; g<=10; g+=2.5){
+    const y = yFor(g);
+    grid += `<line x1="${padL}" y1="${y}" x2="${w-padR}" y2="${y}" stroke="var(--border-soft)" stroke-width="1"/>
+              <text x="${padL-8}" y="${y+3}" text-anchor="end" font-size="9" fill="var(--text-faint)" font-family="var(--mono)">${g}</text>`;
+  }
+  // target line
+  const targetY = yFor(state.threshold);
+  grid += `<line x1="${padL}" y1="${targetY}" x2="${w-padR}" y2="${targetY}" stroke="var(--good)" stroke-width="1.3" stroke-dasharray="5 4"/>
+           <text x="${w-padR}" y="${targetY-5}" text-anchor="end" font-size="9.5" fill="var(--good)" font-family="var(--mono)">target ${state.threshold}</text>`;
+
+  let path = pts.map((v,i)=> (i===0?"M":"L") + xFor(i) + " " + yFor(v)).join(" ");
+  let dots = pts.map((v,i)=>`<circle cx="${xFor(i)}" cy="${yFor(v)}" r="4" fill="var(--c-evaluator)" stroke="#080B12" stroke-width="1.5"/>
+    <text x="${xFor(i)}" y="${yFor(v)-10}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text)" font-family="var(--mono)">${v.toFixed(1)}</text>
+    <text x="${xFor(i)}" y="${h-8}" text-anchor="middle" font-size="9.5" fill="var(--text-faint)" font-family="var(--mono)">R${state.history[i].round}</text>`).join("");
+
+  chartSvg.innerHTML = `${grid}<path d="${path}" fill="none" stroke="var(--c-evaluator)" stroke-width="2.2"/>${dots}`;
+  chartCaption.textContent = `${n} round${n===1?'':'s'} evaluated so far`;
+}
+
+/* ============================================================
+   Memory panel
+   ============================================================ */
+function renderMemory(){
+  if(!state.memory){ memoryPanel.style.display="none"; return; }
+  memoryPanel.style.display="block";
+  memoryBox.textContent = state.memory;
+}
+
+/* ============================================================
+   Error banner
+   ============================================================ */
+function showError(msg, onRetry){
+  errorSlot.innerHTML = `<div class="error-banner"><span>⚠ ${escapeHtml(msg)}</span><button id="errRetryBtn">Retry from here</button></div>`;
+  $("errRetryBtn").onclick = ()=>{ errorSlot.innerHTML=""; if(onRetry) onRetry(); };
+}
+function clearError(){ errorSlot.innerHTML=""; }
+
+/* ============================================================
+   MAIN ORCHESTRATION LOOP
+   ============================================================ */
+async function runPipeline(){
+  if(state.running) return;
+  const spec = specInput.value.trim();
+  if(!spec){
+    showError("Please describe the function or algorithm to build before running the pipeline.");
+    return;
+  }
+  clearError();
+  state = {
+    running:true, spec, threshold: parseFloat(thresholdInput.value)||9, hardCap: parseInt(capInput.value)||6,
+    round:0, history:[], memory:"", planText:"", finalCode:"", finalText:"", stopReason:null,
+    apiCalls:0, retries:0, startTime:Date.now(), endTime:null, activeAgent:null, aborted:false,
+  };
+  finalSlot.innerHTML=""; memoryPanel.style.display="none"; chartPanel.style.display="none";
+  historyList.innerHTML = `<div class="empty-state"><div class="glyph">◌</div><p>Running…</p></div>`;
+  logBox.innerHTML="";
+  runBtn.textContent="■ Stop"; runBtn.classList.add("stop");
+  specInput.disabled=true; thresholdInput.disabled=true; capInput.disabled=true;
+  updateStatus();
+
+  try{
+    // ---- Planner ----
+    setActiveAgent("planner");
+    log("planner", "Analyzing spec and drafting requirements + edge cases…");
+    state.planText = await callClaude(SYS.planner, `SPECIFICATION:\n${spec}`, 900);
+    log("planner", "Requirements plan produced.");
+
+    // ---- Executor ----
+    setActiveAgent("executor");
+    log("executor", "Writing first implementation against the plan…");
+    const execOut = await callClaude(SYS.executor, `SPECIFICATION:\n${spec}\n\nPLAN:\n${state.planText}`, MAX_TOKENS);
+    let currentDraft = extractCode(execOut);
+    log("executor", "First draft ready.");
+
+    let prevScore = null;
+    let deltas = [];
+
+    while(true){
+      state.round++;
+      updateStatus();
+
+      // ---- Evaluator ----
+      setActiveAgent("evaluator", `Round ${state.round} — Evaluator scoring the draft…`);
+      log("evaluator", `Round ${state.round}: scoring current draft against the plan…`);
+      const evalOut = await callClaude(
+        SYS.evaluator,
+        `PLAN / RUBRIC:\n${state.planText}\n\n${state.memory ? "PERSISTENT MEMORY (from earlier rounds):\n"+state.memory+"\n\n" : ""}CURRENT CODE DRAFT:\n\`\`\`\n${currentDraft}\n\`\`\``,
+        900
+      );
+      const score = extractScore(evalOut);
+      const delta = prevScore===null ? null : (score - prevScore);
+      if(delta!==null) deltas.push(delta);
+      log("evaluator", `Round ${state.round} score: ${score.toFixed(1)}/10${delta!==null?` (Δ ${delta>=0?'+':''}${delta.toFixed(1)})`:''}`);
+
+      const entry = { round: state.round, draft: currentDraft, score, evalText: evalOut, criticText:null, improveText:null, memoryText:null, delta };
+      state.history.push(entry);
+      prevScore = score;
+      renderHistory();
+
+      // ---- STOP CHECK (in order: plateau, threshold, hard cap) ----
+      let stopReason = null;
+      if(state.round >= 3 && deltas.length>=2){
+        const lastTwo = deltas.slice(-2);
+        if(lastTwo.every(d => d < DELTA_THRESHOLD)){
+          stopReason = "plateau";
+        }
+      }
+      if(!stopReason && score >= state.threshold){
+        stopReason = "threshold";
+      }
+      if(!stopReason && state.round >= state.hardCap){
+        stopReason = "hardcap";
+      }
+
+      if(stopReason){
+        state.stopReason = stopReason;
+        log(null, `Stop condition fired: ${stopReason.toUpperCase()}. Branching to Final Reviewer.`);
+        break;
+      }
+
+      // ---- Critic ----
+      setActiveAgent("critic", `Round ${state.round} — Critic reviewing…`);
+      log("critic", `Round ${state.round}: identifying concrete weaknesses…`);
+      const criticOut = await callClaude(
+        SYS.critic,
+        `${state.memory ? "PERSISTENT MEMORY:\n"+state.memory+"\n\n" : ""}CODE DRAFT:\n\`\`\`\n${currentDraft}\n\`\`\`\n\nEVALUATOR REPORT:\n${evalOut}`,
+        800
+      );
+      entry.criticText = criticOut;
+      log("critic", `Round ${state.round}: critique complete.`);
+      renderHistory();
+
+      // ---- Improver ----
+      setActiveAgent("improver", `Round ${state.round} — Improver rewriting code…`);
+      log("improver", `Round ${state.round}: rewriting to resolve raised issues…`);
+      const improveOut = await callClaude(
+        SYS.improver,
+        `${state.memory ? "PERSISTENT MEMORY:\n"+state.memory+"\n\n" : ""}CURRENT CODE:\n\`\`\`\n${currentDraft}\n\`\`\`\n\nEVALUATOR REPORT:\n${evalOut}\n\nCRITIC FINDINGS:\n${criticOut}`,
+        MAX_TOKENS
+      );
+      entry.improveText = improveOut;
+      currentDraft = extractCode(improveOut);
+      entry.draft = currentDraft;
+      log("improver", `Round ${state.round}: rewrite complete.`);
+      renderHistory();
+
+      // ---- Memory Manager ----
+      setActiveAgent("memory", `Round ${state.round} — Memory Manager distilling lessons…`);
+      log("memory", `Round ${state.round}: updating persistent memory…`);
+      const memOut = await callClaude(
+        SYS.memory,
+        `${state.memory ? "EXISTING MEMORY:\n"+state.memory+"\n\n" : ""}THIS ROUND'S EVALUATION:\n${evalOut}\n\nTHIS ROUND'S CRITIQUE:\n${criticOut}\n\nTHIS ROUND'S IMPROVEMENT SUMMARY:\n${improveOut.split(/CHANGES:/i)[1] || improveOut}`,
+        400
+      );
+      entry.memoryText = memOut;
+      state.memory = (state.memory ? state.memory + "\n" : "") + memOut;
+      log("memory", `Round ${state.round}: memory updated.`);
+      renderHistory();
+      renderMemory();
+    }
+
+    // ---- Final Reviewer ----
+    setActiveAgent("reviewer", "Final Reviewer preparing sign-off…");
+    document.querySelectorAll(".edge-path").forEach(e=>e.classList.remove("flowing"));
+    const revEdge = $("edge-branch-rev"); if(revEdge) revEdge.classList.add("flowing");
+    log("reviewer", "Reviewing full history and finalizing code…");
+    const historySummary = state.history.map(r=>`Round ${r.round}: score ${r.score.toFixed(1)}/10${r.delta!==null?` (Δ ${r.delta>=0?'+':''}${r.delta.toFixed(1)})`:''}`).join("\n");
+    const reviewOut = await callClaude(
+      SYS.reviewer,
+      `SPEC:\n${spec}\n\nPLAN:\n${state.planText}\n\nSTOP REASON: ${state.stopReason}\n\nSCORE HISTORY:\n${historySummary}\n\nPERSISTENT MEMORY:\n${state.memory}\n\nLATEST CODE:\n\`\`\`\n${currentDraft}\n\`\`\`\n\nLATEST EVALUATOR REPORT:\n${state.history[state.history.length-1].evalText}`,
+      MAX_TOKENS
+    );
+    state.finalText = reviewOut;
+    state.finalCode = extractCode(reviewOut);
+    log("reviewer", "Final sign-off complete.");
+
+    state.endTime = Date.now();
+    state.running = false;
+    setActiveAgent(null);
+    renderFinal();
+    updateStatus();
+
+  } catch(err){
+    state.running = false;
+    setActiveAgent(null);
+    updateStatus();
+    log(null, `Pipeline halted: ${err.message}`);
+    showError(`Something went wrong: ${err.message}`, ()=>runPipeline());
+  } finally {
+    runBtn.textContent="▶ Run Pipeline"; runBtn.classList.remove("stop");
+    specInput.disabled=false; thresholdInput.disabled=false; capInput.disabled=false;
+    updateStatus();
+  }
+}
+
+/* ============================================================
+   Final summary render
+   ============================================================ */
+const STOP_REASON_TEXT = {
+  plateau: "Improvement plateaued — the last two rounds each gained less than 0.3 points.",
+  threshold: "Target score reached — the Evaluator's score crossed the configured threshold.",
+  hardcap: "Hard iteration cap reached — safety fallback stopped the loop before it could run indefinitely.",
+};
+
+function renderFinal(){
+  const totalTime = ((state.endTime - state.startTime)/1000).toFixed(1);
+  const scores = state.history.map(r=>r.score);
+  const firstScore = scores[0], lastScore = scores[scores.length-1];
+  const totalGain = (lastScore-firstScore).toFixed(1);
+  const agentCallCounts = {
+    Planner:1, Executor:1,
+    Evaluator: state.history.length,
+    Critic: state.history.filter(r=>r.criticText).length,
+    Improver: state.history.filter(r=>r.improveText).length,
+    "Memory Manager": state.history.filter(r=>r.memoryText).length,
+    "Final Reviewer": 1,
+  };
+
+  finalSlot.innerHTML = `
+    <div class="final-banner">
+      <h3>✅ Pipeline complete — ${escapeHtml(state.stopReason.toUpperCase())}</h3>
+      <p>${STOP_REASON_TEXT[state.stopReason]} Final score: <b style="color:var(--text)">${lastScore.toFixed(1)}/10</b> after <b style="color:var(--text)">${state.round}</b> round${state.round===1?'':'s'} (started at ${firstScore.toFixed(1)}/10, net gain ${totalGain>=0?'+':''}${totalGain}).</p>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="v">${state.round}</div><div class="k">Rounds run</div></div>
+        <div class="stat-box"><div class="v">${state.apiCalls}</div><div class="k">API calls</div></div>
+        <div class="stat-box"><div class="v">${state.retries}</div><div class="k">Retries</div></div>
+        <div class="stat-box"><div class="v">${totalTime}s</div><div class="k">Wall time</div></div>
+        <div class="stat-box"><div class="v">${lastScore.toFixed(1)}</div><div class="k">Final score</div></div>
+        <div class="stat-box"><div class="v">${totalGain>=0?'+':''}${totalGain}</div><div class="k">Net gain</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Final code</div>
+        <button class="copy-btn" id="copyCodeBtn">Copy code</button>
+      </div>
+      <div class="code-block" style="max-height:420px;">${escapeHtml(state.finalCode)}</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Final Reviewer sign-off</div></div>
+      <div class="text-block" style="max-height:none;">${escapeHtml(state.finalText.replace(/```[\s\S]*?```/,'').trim())}</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Agent performance summary</div></div>
+      <table class="perf-table">
+        <thead><tr><th>Agent</th><th>Calls made</th><th>Role this run</th></tr></thead>
+        <tbody>
+          ${Object.entries(agentCallCounts).map(([name,count])=>`<tr><td>${name}</td><td>${count}</td><td>${roleFor(name)}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Architecture overview & extension ideas</div></div>
+      <div class="arch-grid">
+        <div>
+          <h5>How this pipeline is wired</h5>
+          <ul>
+            <li>Planner and Executor run once, seeding the loop with requirements + a first draft.</li>
+            <li>Evaluator → Critic → Improver → Memory Manager repeat as a genuine loop; each call is live and stateful.</li>
+            <li>The stop-check runs right after every Evaluator call, in fixed priority: plateau, then threshold, then hard cap.</li>
+            <li>Final Reviewer only fires once, off the stop branch, with the entire round history in context.</li>
+            <li>All parsing (score, code block extraction) reads literal model output — no rule-based scoring stands in for a call.</li>
+          </ul>
+        </div>
+        <div>
+          <h5>Ways to extend this system</h5>
+          <ul>
+            <li>Add a Safety Monitor agent that screens each Improver output for unsafe patterns before it re-enters the loop.</li>
+            <li>Let the Evaluator run actual unit tests (via a sandboxed executor tool) instead of a self-reported score.</li>
+            <li>Persist memory across sessions (localStorage / a backend) so the system improves across unrelated runs.</li>
+            <li>Add a second Critic with an adversarial persona and require both critics to agree before improving.</li>
+            <li>Stream partial tokens for a more responsive UI instead of waiting for full completions.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Further prompts for building more advanced autonomous systems</div></div>
+      <div class="prompt-list">
+        <div class="prompt-item">"Add a Safety Monitor agent that runs after the Improver and can veto a round's output back to the Critic."</div>
+        <div class="prompt-item">"Give the Evaluator a real code-execution tool so scores are based on actual test runs, not self-report."</div>
+        <div class="prompt-item">"Extend the pipeline to handle multi-file projects, with a separate Planner pass per file."</div>
+        <div class="prompt-item">"Add a human-in-the-loop approval step before the Final Reviewer's code is considered done."</div>
+        <div class="prompt-item">"Turn this into a two-agent debate system where Critic and a second Advocate agent argue before Improver acts."</div>
+      </div>
+    </div>
+  `;
+  $("copyCodeBtn").onclick = ()=>{
+    navigator.clipboard.writeText(state.finalCode).then(()=>{
+      $("copyCodeBtn").textContent="Copied!";
+      setTimeout(()=>{ $("copyCodeBtn").textContent="Copy code"; }, 1500);
+    });
+  };
+}
+function roleFor(name){
+  return {
+    "Planner":"Requirements & rubric",
+    "Executor":"First implementation",
+    "Evaluator":"Per-round scoring",
+    "Critic":"Per-round critique",
+    "Improver":"Per-round rewrite",
+    "Memory Manager":"Per-round memory distillation",
+    "Final Reviewer":"Final sign-off",
+  }[name] || "";
+}
+
+/* ============================================================
+   Wiring
+   ============================================================ */
+runBtn.onclick = ()=>{
+  if(state.running){
+    state.aborted = true;
+    log(null, "Stop requested by user.");
+  } else {
+    runPipeline();
+  }
+};
+resetBtn.onclick = ()=>{
+  state.aborted = true;
+  setTimeout(()=>{
+    specInput.value=""; thresholdInput.value=9; capInput.value=6;
+    state = { running:false, spec:"", threshold:9, hardCap:6, round:0, history:[], memory:"", planText:"", finalCode:"", finalText:"", stopReason:null, apiCalls:0, retries:0, startTime:null, endTime:null, activeAgent:null, aborted:false };
+    logBox.innerHTML = `<div class="log-empty">No activity yet. Configure a spec and press Run Pipeline.</div>`;
+    historyList.innerHTML = `<div class="empty-state"><div class="glyph">◌</div><p>Iteration history will appear here once the pipeline starts running. Each round shows the evaluator's score, the critic's findings, the improver's rewrite, and the memory update — all literal model output.</p></div>`;
+    finalSlot.innerHTML=""; errorSlot.innerHTML=""; memoryPanel.style.display="none"; chartPanel.style.display="none";
+    setActiveAgent(null);
+    updateStatus();
+  }, 50);
+};
+
+updateStatus();
+})();
+</script>
+</body>
+</html>
