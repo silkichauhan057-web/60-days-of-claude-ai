@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Content Intelligence Studio</title>
+<style>
+  :root[data-theme="dark"]{
+    --bg:#14161c;
+    --bg-elevated:#1b1e26;
+    --bg-card:#20232c;
+    --bg-card-hover:#262a34;
+    --ink:#ece9e2;
+    --ink-dim:#a6a29a;
+    --ink-faint:#726e67;
+    --accent:#a8402f;
+    --accent-soft:rgba(168,64,47,0.16);
+    --gold:#c9a24b;
+    --gold-soft:rgba(201,162,75,0.16);
+    --sage:#6f9a6a;
+    --sage-soft:rgba(111,154,106,0.16);
+    --border:rgba(236,233,226,0.10);
+    --border-strong:rgba(236,233,226,0.20);
+    --shadow:0 20px 50px -20px rgba(0,0,0,0.6);
+  }
+  :root[data-theme="light"]{
+    --bg:#e5e2da;
+    --bg-elevated:#eeece4;
+    --bg-card:#f6f4ee;
+    --bg-card-hover:#ffffff;
+    --ink:#232019;
+    --ink-dim:#5c574d;
+    --ink-faint:#8b8578;
+    --accent:#8c2f26;
+    --accent-soft:rgba(140,47,38,0.10);
+    --gold:#96762b;
+    --gold-soft:rgba(150,118,43,0.12);
+    --sage:#3f6b3d;
+    --sage-soft:rgba(63,107,61,0.12);
+    --border:rgba(35,32,25,0.10);
+    --border-strong:rgba(35,32,25,0.20);
+    --shadow:0 20px 50px -25px rgba(35,32,25,0.35);
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.5;
+    transition:background .4s ease,color .4s ease;
+  }
+  .font-display{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;}
+  .font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  a{color:inherit;}
+  ::selection{background:var(--accent);color:#f5f1ea;}
+  button{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px 120px;}
+
+  /* ---------- Masthead ---------- */
+  header.masthead{
+    border-bottom:1px solid var(--border-strong);
+    padding:28px 0 22px;
+    margin-bottom:36px;
+  }
+  .masthead-row{
+    max-width:1120px;margin:0 auto;padding:0 24px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  }
+  .masthead-eyebrow{
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;
+    display:flex;align-items:center;gap:8px;margin-bottom:6px;
+  }
+  .masthead-eyebrow::before{content:"";width:16px;height:1px;background:var(--accent);display:inline-block;}
+  h1.title{
+    font-size:clamp(28px,4vw,42px);margin:0;font-weight:400;letter-spacing:-.01em;
+  }
+  .subtitle{color:var(--ink-dim);font-size:14px;margin-top:6px;max-width:520px;}
+  .masthead-tools{display:flex;align-items:center;gap:10px;}
+  .theme-toggle{
+    width:38px;height:38px;border-radius:50%;border:1px solid var(--border-strong);
+    background:var(--bg-card);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:16px;transition:transform .25s ease,background .25s ease;
+  }
+  .theme-toggle:hover{background:var(--bg-card-hover);transform:rotate(15deg);}
+
+  /* ---------- Sections ---------- */
+  section.panel{
+    background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+    padding:26px;margin-bottom:22px;box-shadow:var(--shadow);
+  }
+  .panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .panel-title{font-family:Georgia,serif;font-size:20px;margin:0;}
+  .panel-num{
+    font-family:ui-monospace,monospace;font-size:11px;color:var(--ink-faint);letter-spacing:.1em;
+  }
+  .panel-hint{font-size:13px;color:var(--ink-dim);margin-top:-10px;margin-bottom:18px;}
+
+  /* ---------- Segmented controls ---------- */
+  .field{margin-bottom:20px;}
+  .field:last-child{margin-bottom:0;}
+  .field label.field-label{
+    display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);
+    margin-bottom:9px;font-weight:600;
+  }
+  .seg{display:flex;flex-wrap:wrap;gap:8px;}
+  .seg-btn{
+    border:1px solid var(--border-strong);background:var(--bg-elevated);color:var(--ink-dim);
+    padding:9px 14px;border-radius:999px;font-size:13px;cursor:pointer;transition:all .18s ease;
+  }
+  .seg-btn:hover{border-color:var(--accent);color:var(--ink);}
+  .seg-btn.active{
+    background:var(--accent);border-color:var(--accent);color:#f7f0ea;font-weight:600;
+  }
+
+  /* ---------- Upload area ---------- */
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:720px){.upload-grid{grid-template-columns:1fr;}}
+  textarea#text-input{
+    width:100%;min-height:180px;resize:vertical;background:var(--bg-elevated);
+    border:1px solid var(--border-strong);border-radius:12px;color:var(--ink);padding:14px;
+    font-size:14px;line-height:1.6;font-family:inherit;
+  }
+  .dropzone{
+    border:1.5px dashed var(--border-strong);border-radius:12px;min-height:180px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    cursor:pointer;background:var(--bg-elevated);text-align:center;padding:18px;transition:all .2s ease;
+  }
+  .dropzone.drag{border-color:var(--gold);background:var(--gold-soft);}
+  .dropzone.has-image{padding:10px;}
+  .dropzone .dz-icon{font-size:26px;opacity:.7;}
+  .dropzone .dz-text{font-size:13px;color:var(--ink-dim);}
+  .dropzone .dz-sub{font-size:11px;color:var(--ink-faint);}
+  .preview-img{max-width:100%;max-height:220px;border-radius:8px;object-fit:contain;}
+  .img-actions{display:flex;gap:8px;margin-top:8px;}
+
+  .btn{
+    border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;
+    transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease;
+  }
+  .btn-primary{background:var(--accent);color:#f7f0ea;box-shadow:0 10px 24px -10px var(--accent-soft);}
+  .btn-primary:hover:not(:disabled){transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-ghost{background:transparent;border:1px solid var(--border-strong);color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--accent);}
+  .btn-sm{padding:7px 12px;font-size:12px;border-radius:8px;}
+
+  .run-row{display:flex;align-items:center;gap:14px;margin-top:22px;flex-wrap:wrap;}
+  .validation-msg{font-size:13px;color:var(--gold);}
+
+  /* ---------- Reviewer roster ---------- */
+  .roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+  .roster-card{
+    border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--bg-elevated);
+    display:flex;flex-direction:column;gap:8px;transition:border-color .2s ease;
+  }
+  .roster-card.running{border-color:var(--gold);}
+  .roster-card.done{border-color:var(--sage);}
+  .roster-card.error{border-color:var(--accent);}
+  .roster-top{display:flex;align-items:center;justify-content:space-between;}
+  .roster-name{font-size:13px;font-weight:600;}
+  .roster-role{font-size:11px;color:var(--ink-faint);}
+  .status-dot{width:9px;height:9px;border-radius:50%;background:var(--ink-faint);flex-shrink:0;}
+  .status-dot.running{background:var(--gold);animation:pulse 1.1s infinite;}
+  .status-dot.done{background:var(--sage);}
+  .status-dot.error{background:var(--accent);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .status-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);}
+
+  /* ---------- Activity log ---------- */
+  .log-box{
+    background:#0d0e12;border-radius:12px;padding:14px 16px;height:170px;overflow-y:auto;
+    font-size:12px;line-height:1.7;border:1px solid var(--border);
+  }
+  :root[data-theme="light"] .log-box{background:#1c1a15;}
+  .log-line{color:#c9c4b8;white-space:pre-wrap;}
+  .log-line .t{color:#736f63;margin-right:8px;}
+  .log-line.ok .msg{color:#8fbf88;}
+  .log-line.err .msg{color:#d6786a;}
+  .log-line.info .msg{color:#c9c4b8;}
+
+  /* ---------- Score header / stamp ---------- */
+  .score-hero{display:flex;align-items:center;gap:28px;flex-wrap:wrap;}
+  .stamp{
+    width:130px;height:130px;border-radius:50%;border:3px double var(--accent);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transform:rotate(-7deg);flex-shrink:0;color:var(--accent);position:relative;
+    background:var(--accent-soft);
+  }
+  .stamp .grade{font-family:Georgia,serif;font-size:40px;font-weight:700;line-height:1;}
+  .stamp .grade-sub{font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;text-align:center;}
+  .score-meta{flex:1;min-width:220px;}
+  .score-number{font-family:Georgia,serif;font-size:52px;line-height:1;}
+  .score-number span{font-size:20px;color:var(--ink-faint);}
+  .score-label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);margin-bottom:4px;}
+  .grade-label-text{font-size:15px;color:var(--ink-dim);margin-top:8px;max-width:560px;}
+
+  /* ---------- Category bars ---------- */
+  .cat-list{display:flex;flex-direction:column;gap:16px;margin-top:6px;}
+  .cat-row .cat-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+  .cat-name{font-weight:600;}
+  .cat-score{font-family:ui-monospace,monospace;color:var(--ink-dim);}
+  .bar-track{height:8px;border-radius:999px;background:var(--bg-elevated);overflow:hidden;}
+  .bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--accent));width:0%;transition:width 1.1s cubic-bezier(.16,1,.3,1);}
+
+  /* ---------- Expandable review cards ---------- */
+  .review-card{border:1px solid var(--border);border-radius:12px;margin-top:14px;overflow:hidden;}
+  .review-card summary{
+    list-style:none;cursor:pointer;padding:14px 16px;display:flex;justify-content:space-between;
+    align-items:center;background:var(--bg-elevated);gap:10px;
+  }
+  .review-card summary::-webkit-details-marker{display:none;}
+  .review-card summary .chev{transition:transform .2s ease;color:var(--ink-faint);}
+  .review-card[open] summary .chev{transform:rotate(90deg);}
+  .review-card .body{padding:16px;}
+  .review-card .summary-text{color:var(--ink-dim);font-size:14px;margin:0 0 14px;}
+  .subcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
+  .subcol h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;color:var(--ink-faint);}
+  .subcol ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink);}
+  .subcol li{margin-bottom:6px;}
+  .subcol.strengths h4{color:var(--sage);}
+  .subcol.weaknesses h4{color:var(--accent);}
+  .subcol.opportunities h4{color:var(--gold);}
+  .subcol.recs h4{color:var(--ink-dim);}
+
+  /* ---------- Before / After ---------- */
+  .ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:720px){.ba-grid{grid-template-columns:1fr;}}
+  .ba-box{border-radius:12px;padding:16px;font-size:14px;line-height:1.7;}
+  .ba-box.before{background:var(--accent-soft);border-left:3px solid var(--accent);text-decoration:line-through;text-decoration-color:rgba(168,64,47,.5);text-decoration-thickness:1px;}
+  .ba-box.after{background:var(--sage-soft);border-left:3px solid var(--sage);}
+  .ba-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700;text-decoration:none;display:block;}
+  .ba-box.before .ba-label{color:var(--accent);}
+  .ba-box.after .ba-label{color:var(--sage);}
+
+  /* ---------- Chips ---------- */
+  .chip-list{display:flex;flex-direction:column;gap:10px;}
+  .chip{
+    border:1px solid var(--border-strong);border-radius:10px;padding:12px 14px;font-size:14px;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--bg-elevated);
+  }
+  .chip-copy{
+    background:transparent;border:1px solid var(--border-strong);border-radius:8px;color:var(--ink-dim);
+    font-size:11px;padding:5px 9px;cursor:pointer;flex-shrink:0;
+  }
+  .chip-copy:hover{color:var(--ink);border-color:var(--gold);}
+
+  /* ---------- Checklist ---------- */
+  .checklist{display:flex;flex-direction:column;gap:10px;}
+  .check-item{display:flex;align-items:flex-start;gap:10px;font-size:14px;cursor:pointer;}
+  .check-item input{margin-top:3px;accent-color:var(--sage);width:16px;height:16px;flex-shrink:0;}
+  .check-item.checked .txt{color:var(--ink-faint);text-decoration:line-through;}
+
+  /* ---------- Perf badge ---------- */
+  .perf-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .perf-badge{
+    padding:8px 16px;border-radius:999px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  }
+  .perf-badge.low{background:var(--accent-soft);color:var(--accent);}
+  .perf-badge.medium{background:var(--gold-soft);color:var(--gold);}
+  .perf-badge.high{background:var(--sage-soft);color:var(--sage);}
+  .perf-disclaimer{font-size:11px;color:var(--ink-faint);font-style:italic;}
+
+  /* ---------- Two column grid ---------- */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:720px){.grid-2{grid-template-columns:1fr;}}
+
+  /* ---------- Loader / misc ---------- */
+  .spinner{
+    width:16px;height:16px;border-radius:50%;border:2px solid var(--border-strong);
+    border-top-color:var(--accent);animation:spin .7s linear infinite;display:inline-block;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-box{
+    background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:16px;
+    font-size:14px;color:var(--ink);
+  }
+  .hidden{display:none !important;}
+  .fade-in{animation:fadeIn .5s ease both;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .preview-strip{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
+  .preview-item{display:flex;gap:10px;align-items:center;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--ink-dim);}
+  .preview-item img{width:36px;height:36px;object-fit:cover;border-radius:6px;}
+  footer.app-footer{text-align:center;padding:40px 0 10px;color:var(--ink-faint);font-size:12px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-row">
+    <div>
+      <div class="masthead-eyebrow">AI Editorial Desk</div>
+      <h1 class="title font-display">Content Intelligence Studio</h1>
+      <p class="subtitle">A multi-reviewer AI newsroom that reads your work the way a demanding editor would &mdash; then tells you exactly how to make it better.</p>
+    </div>
+    <div class="masthead-tools">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light and dark mode" title="Toggle theme">&#9789;</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- STEP 1: BRIEF -->
+  <section class="panel fade-in">
+    <div class="panel-head">
+      <h2 class="panel-title font-display">The Brief</h2>
+      <span class="panel-num">01 &mdash; SETUP</span>
+    </div>
+    <p class="panel-hint">Tell the desk what you're submitting. This shapes which reviewers get assigned and how they read your work.</p>
+
+    <div class="field">
+      <label class="field-label">Content type</label>
+      <div class="seg" data-group="contentType">
+        <button class="seg-btn" data-value="Short-form video script or idea">Short-form video</button>
+        <button class="seg-btn active" data-value="Long-form article or blog post">Long-form article</button>
+        <button class="seg-btn" data-value="Social media post or caption">Social post</button>
+        <button class="seg-btn" data-value="Image, thumbnail, or screenshot">Image / thumbnail</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Platform</label>
+      <div class="seg" data-group="platform">
+        <button class="seg-btn" data-value="Medium or Substack newsletter">Medium / Substack</button>
+        <button class="seg-btn active" data-value="Personal blog, SEO-focused site">Personal blog / SEO</button>
+        <button class="seg-btn" data-value="LinkedIn article">LinkedIn</button>
+        <button class="seg-btn" data-value="Other">Other</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Primary goal</label>
+      <div class="seg" data-group="goal">
+        <button class="seg-btn" data-value="Grow organic search traffic (SEO)">SEO traffic</button>
+        <button class="seg-btn active" data-value="Build authority and thought leadership">Authority</button>
+        <button class="seg-btn" data-value="Drive conversions or leads">Conversions</button>
+        <button class="seg-btn" data-value="Maximize reader engagement and shares">Engagement</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Review rigor</label>
+      <div class="seg" data-group="rigor">
+        <button class="seg-btn" data-value="Light: encouraging, high-level feedback">Light</button>
+        <button class="seg-btn active" data-value="Balanced: honest pros and cons, like a fair professional editor">Balanced</button>
+        <button class="seg-btn" data-value="Rigorous: critical, professional-editor level, held to publishing standards">Rigorous</button>
+        <button class="seg-btn" data-value="Brutal: no-holds-barred, VC-pitch-level scrutiny">Brutal</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: UPLOAD -->
+  <section class="panel fade-in">
+    <div class="panel-head">
+      <h2 class="panel-title font-display">The Submission</h2>
+      <span class="panel-num">02 &mdash; UPLOAD</span>
+    </div>
+    <p class="panel-hint">Paste your article text, drop in a screenshot of the published page, or both. At least one is required.</p>
+
+    <div class="upload-grid">
+      <div>
+        <label class="field-label" style="display:block;margin-bottom:9px;">Article text (optional if image provided)</label>
+        <textarea id="text-input" placeholder="Paste your article, caption, or transcript here..."></textarea>
+      </div>
+      <div>
+        <label class="field-label" style="display:block;margin-bottom:9px;">Screenshot / thumbnail / image</label>
+        <div id="dropzone" class="dropzone">
+          <div class="dz-icon">&#128196;</div>
+          <div class="dz-text">Drop an image here or click to browse</div>
+          <div class="dz-sub">PNG, JPG, or WEBP</div>
+        </div>
+        <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp" class="hidden" />
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="btn btn-primary" id="run-btn" disabled>Run AI Review</button>
+      <span class="validation-msg" id="validation-msg">Add article text or an image to begin.</span>
+    </div>
+  </section>
+
+  <!-- STEP 3: WORKFLOW (hidden until run) -->
+  <section class="panel fade-in hidden" id="workflow-panel">
+    <div class="panel-head">
+      <h2 class="panel-title font-display">The Newsroom</h2>
+      <span class="panel-num">03 &mdash; LIVE REVIEW</span>
+    </div>
+    <p class="panel-hint">Each reviewer works independently, then the chief editor synthesizes a final report.</p>
+    <div class="roster" id="roster"></div>
+    <div style="margin-top:18px;">
+      <label class="field-label" style="display:block;margin-bottom:9px;">Activity log</label>
+      <div class="log-box" id="log-box"></div>
+    </div>
+  </section>
+
+  <!-- ERROR BOX -->
+  <div class="error-box hidden fade-in" id="error-box" style="margin-bottom:22px;"></div>
+
+  <!-- STEP 4: RESULTS (hidden until complete) -->
+  <div id="results-root" class="hidden"></div>
+
+</div>
+
+<footer class="app-footer">Content Intelligence Studio &mdash; every score, insight, and rewrite on this page is generated live by Claude. Treat performance estimates as informed guesses, not guarantees.</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     STATE
+  ========================================================= */
+  var state = {
+    config: {
+      contentType: "Long-form article or blog post",
+      platform: "Personal blog, SEO-focused site",
+      goal: "Build authority and thought leadership",
+      rigor: "Balanced: honest pros and cons, like a fair professional editor"
+    },
+    textInput: "",
+    image: null, // {base64, mediaType, dataUrl, name}
+    running: false,
+    stageResults: {},   // key -> parsed fields
+    stageOrder: [],
+    finalResult: null
+  };
+
+  /* =========================================================
+     THEME
+  ========================================================= */
+  var root = document.documentElement;
+  var themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', function(){
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    themeToggle.innerHTML = next === 'dark' ? '&#9789;' : '&#9788;';
+  });
+
+  /* =========================================================
+     SEGMENTED CONTROLS
+  ========================================================= */
+  document.querySelectorAll('.seg').forEach(function(seg){
+    var group = seg.getAttribute('data-group');
+    seg.addEventListener('click', function(e){
+      var btn = e.target.closest('.seg-btn');
+      if(!btn) return;
+      seg.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      state.config[group] = btn.getAttribute('data-value');
+    });
+  });
+
+  /* =========================================================
+     TEXT INPUT
+  ========================================================= */
+  var textInputEl = document.getElementById('text-input');
+  textInputEl.addEventListener('input', function(){
+    state.textInput = textInputEl.value;
+    validateSubmission();
+  });
+
+  /* =========================================================
+     IMAGE UPLOAD
+  ========================================================= */
+  var dropzone = document.getElementById('dropzone');
+  var fileInput = document.getElementById('file-input');
+
+  dropzone.addEventListener('click', function(){ fileInput.click(); });
+  dropzone.addEventListener('dragover', function(e){ e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', function(){ dropzone.classList.remove('drag'); });
+  dropzone.addEventListener('drop', function(e){
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    if(e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', function(){
+    if(fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file){
+    if(!/^image\/(png|jpeg|webp|jpg)$/.test(file.type)){
+      alert('Please upload a PNG, JPG, or WEBP image.');
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(){
+      var dataUrl = reader.result;
+      var base64 = dataUrl.split(',')[1];
+      state.image = { base64: base64, mediaType: file.type, dataUrl: dataUrl, name: file.name };
+      renderDropzonePreview();
+      validateSubmission();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function renderDropzonePreview(){
+    if(!state.image){
+      dropzone.classList.remove('has-image');
+      dropzone.innerHTML = '<div class="dz-icon">&#128196;</div><div class="dz-text">Drop an image here or click to browse</div><div class="dz-sub">PNG, JPG, or WEBP</div>';
+      return;
+    }
+    dropzone.classList.add('has-image');
+    dropzone.innerHTML = '';
+    var img = document.createElement('img');
+    img.src = state.image.dataUrl;
+    img.className = 'preview-img';
+    dropzone.appendChild(img);
+    var actions = document.createElement('div');
+    actions.className = 'img-actions';
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'btn btn-ghost btn-sm';
+    removeBtn.textContent = 'Remove image';
+    removeBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      state.image = null;
+      fileInput.value = '';
+      renderDropzonePreview();
+      validateSubmission();
+    });
+    actions.appendChild(removeBtn);
+    dropzone.appendChild(actions);
+  }
+
+  /* =========================================================
+     VALIDATION
+  ========================================================= */
+  var runBtn = document.getElementById('run-btn');
+  var validationMsg = document.getElementById('validation-msg');
+  function validateSubmission(){
+    var hasText = state.textInput.trim().length > 30;
+    var hasImage = !!state.image;
+    if(hasText || hasImage){
+      runBtn.disabled = state.running;
+      validationMsg.textContent = state.running ? 'Review in progress…' : 'Ready to run the review.';
+    } else {
+      runBtn.disabled = true;
+      validationMsg.textContent = state.textInput.trim().length > 0
+        ? 'Add a bit more text (30+ characters) or an image to begin.'
+        : 'Add article text or an image to begin.';
+    }
+  }
+  validateSubmission();
+
+  /* =========================================================
+     UTIL
+  ========================================================= */
+  function sleep(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+  function escapeHtml(str){
+    return String(str == null ? '' : str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function nowStamp(){
+    var d = new Date();
+    function p(n){ return (n<10?'0':'')+n; }
+    return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+  }
+  var logBox = document.getElementById('log-box');
+  function log(msg, kind){
+    kind = kind || 'info';
+    var line = document.createElement('div');
+    line.className = 'log-line ' + kind;
+    line.innerHTML = '<span class="t">'+nowStamp()+'</span><span class="msg">'+escapeHtml(msg)+'</span>';
+    logBox.appendChild(line);
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  /* =========================================================
+     MARKER-BASED PARSER (no JSON, ever)
+  ========================================================= */
+  function parseMarkers(text){
+    var fields = {};
+    var lines = String(text || '').split(/\r?\n/);
+    var current = null;
+    var keyRe = /^([A-Z][A-Z0-9_]{2,30}):\s*(.*)$/;
+    for(var i=0;i<lines.length;i++){
+      var raw = lines[i];
+      var line = raw.trim();
+      if(!line) continue;
+      var m = line.match(keyRe);
+      if(m){
+        current = m[1];
+        if(!fields[current]) fields[current] = [];
+        var rest = m[2].trim();
+        if(rest) fields[current].push(rest);
+        continue;
+      }
+      if(current){
+        fields[current].push(line.replace(/^[-•*]\s*/, ''));
+      }
+    }
+    return fields;
+  }
+  function fText(fields, key){
+    return (fields[key] || []).join(' ').trim();
+  }
+  function fList(fields, key){
+    return (fields[key] || []).map(function(s){ return s.trim(); }).filter(Boolean);
+  }
+  function fScore(fields, key){
+    var raw = (fields[key] || [])[0] || '0';
+    var n = parseInt(String(raw).replace(/[^0-9]/g,''), 10);
+    if(isNaN(n)) n = 0;
+    return Math.max(0, Math.min(100, n));
+  }
+
+  /* =========================================================
+     CLAUDE API CALL
+  ========================================================= */
+  async function callClaude(systemPrompt, contentBlocks, maxTokens){
+    var body = {
+      model: "claude-sonnet-4-6",
+      max_tokens: maxTokens || 1400,
+      system: systemPrompt,
+      messages: [ { role: "user", content: contentBlocks } ]
+    };
+    var attempts = 3;
+    var lastErr = null;
+    for(var i=0;i<attempts;i++){
+      try{
+        var res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        if(!res.ok){
+          var errText = '';
+          try{ errText = await res.text(); }catch(e){}
+          throw new Error('API responded with status ' + res.status + (errText ? (': ' + errText.slice(0,180)) : ''));
+        }
+        var data = await res.json();
+        var parts = (data.content || []).filter(function(b){ return b.type === 'text'; }).map(function(b){ return b.text; });
+        var out = parts.join('\n').trim();
+        if(!out) throw new Error('Empty response from model.');
+        return out;
+      }catch(err){
+        lastErr = err;
+        if(i < attempts - 1){
+          log('Retrying after error: ' + err.message, 'err');
+          await sleep(700 * Math.pow(2,i));
+        }
+      }
+    }
+    throw lastErr;
+  }
+
+  /* =========================================================
+     REVIEWER PIPELINE DEFINITION
+  ========================================================= */
+  var OUTPUT_FORMAT_SINGLE =
+    "Respond ONLY in this exact plain-text format. Do not use markdown symbols like # or **, do not use JSON, do not add any preamble or closing remarks outside the format below.\n\n" +
+    "SCORE: <integer 0-100>\n" +
+    "SUMMARY: <2-3 sentence assessment in your voice as this reviewer>\n" +
+    "STRENGTHS:\n- <specific strength>\n- <specific strength>\n" +
+    "WEAKNESSES:\n- <specific weakness>\n- <specific weakness>\n" +
+    "OPPORTUNITIES:\n- <missed opportunity>\n- <missed opportunity>\n" +
+    "RECOMMENDATIONS:\n- <specific, actionable recommendation>\n- <specific, actionable recommendation>";
+
+  function rigorLine(){
+    return "Tone calibration for this review: " + state.config.rigor + ".";
+  }
+  function briefLine(){
+    return "Content type: " + state.config.contentType + ". Platform: " + state.config.platform + ". Creator's stated goal: " + state.config.goal + ".";
+  }
+
+  function buildReviewers(){
+    var hasImage = !!state.image;
+    var hasText = state.textInput.trim().length > 30;
+    var reviewers = [];
+
+    reviewers.push({
+      key: 'structure',
+      name: 'Structure & Clarity Editor',
+      role: 'Flow, readability, argument coherence',
+      system: "You are a veteran developmental editor at a respected publication, specializing in structure, clarity, and readability of long-form writing. " +
+        briefLine() + " " + rigorLine() + "\n" +
+        "Evaluate paragraph structure, logical flow, use of subheadings, pacing, sentence-level clarity, and how well the piece guides a reader from start to finish. " +
+        "If given only a screenshot, judge what is visible (layout, scannability, apparent structure) and say so plainly rather than inventing text you cannot see.\n\n" +
+        OUTPUT_FORMAT_SINGLE
+    });
+
+    reviewers.push({
+      key: 'seo',
+      name: 'Distribution & Discoverability Strategist',
+      role: 'SEO, scannability, snippet potential',
+      system: "You are a senior SEO and content-distribution strategist who has grown multiple independent blogs to significant organic traffic. " +
+        briefLine() + " " + rigorLine() + "\n" +
+        "Evaluate title/headline strength for search intent, likely keyword clarity, meta-description potential, header hierarchy for scannability, and how likely this content is to earn clicks, shares, and search visibility on the stated platform. " +
+        "If given only a screenshot, evaluate what's visible and note any limitations plainly.\n\n" +
+        OUTPUT_FORMAT_SINGLE
+    });
+
+    reviewers.push({
+      key: 'authority',
+      name: 'Authority & Credibility Editor',
+      role: 'Expertise signals, trust, differentiation',
+      system: "You are a thought-leadership editor who coaches experts on building credibility and authority through their writing. " +
+        briefLine() + " " + rigorLine() + "\n" +
+        "Evaluate depth of expertise demonstrated, use of evidence or original insight, confidence and distinctiveness of voice, whether the piece reads as generic or genuinely differentiated, and how well it builds the author's authority toward their stated goal.\n\n" +
+        OUTPUT_FORMAT_SINGLE
+    });
+
+    reviewers.push({
+      key: 'hooks',
+      name: 'Headline & Hook Specialist',
+      role: 'Titles, openings, promise-to-payoff',
+      system: "You are a headline and opening-hook specialist who has tested thousands of titles and intros for engagement. " +
+        briefLine() + " " + rigorLine() + "\n" +
+        "Evaluate the strength of the title and the first few sentences: does the hook earn attention, set a clear promise, and align with what the piece actually delivers?\n\n" +
+        OUTPUT_FORMAT_SINGLE
+    });
+
+    if(hasImage){
+      reviewers.push({
+        key: 'visual',
+        name: 'Visual Presentation Reviewer',
+        role: 'Layout, typography, trust cues',
+        system: "You are a visual UX and editorial design reviewer who evaluates how published web content looks and reads at a glance. " +
+          briefLine() + " " + rigorLine() + "\n" +
+          "Analyze the uploaded screenshot directly: typography, whitespace, visual hierarchy, image/media quality, trust signals (author info, dates, branding), and overall first-impression credibility for this platform and goal.\n\n" +
+          OUTPUT_FORMAT_SINGLE
+      });
+    }
+
+    return reviewers;
+  }
+
+  function buildUserBlocksForReviewer(){
+    var blocks = [];
+    if(state.image){
+      blocks.push({ type: "image", source: { type: "base64", media_type: state.image.mediaType, data: state.image.base64 } });
+    }
+    var textPart = "";
+    if(state.textInput.trim().length > 30){
+      textPart += "Here is the article text:\n\n\"\"\"\n" + state.textInput.trim() + "\n\"\"\"\n\n";
+    } else if(state.image){
+      textPart += "No separate article text was provided. Base your review on the uploaded screenshot only, and read any visible text in the image as part of your analysis.\n\n";
+    }
+    textPart += "Provide your review now, following the required format exactly.";
+    blocks.push({ type: "text", text: textPart });
+    return blocks;
+  }
+
+  /* =========================================================
+     SYNTHESIS STAGE
+  ========================================================= */
+  var SYNTHESIS_FORMAT =
+    "Respond ONLY in this exact plain-text format. Do not use markdown symbols like # or **, do not use JSON, no preamble or closing remarks outside the format.\n\n" +
+    "OVERALL_SCORE: <integer 0-100, your holistic judgment weighing all reviewer findings>\n" +
+    "GRADE_LABEL: <a short punchy phrase, max 8 words, summarizing the verdict>\n" +
+    "EXEC_SUMMARY: <3-4 sentence executive summary written for the creator>\n" +
+    "HEALTH_REPORT: <one paragraph on overall content health relative to the stated goal and platform>\n" +
+    "TOP_IMPROVEMENTS:\n- <highest-impact improvement>\n- <second highest-impact improvement>\n- <third highest-impact improvement>\n" +
+    "PERFORMANCE_LEVEL: <one word only: Low, Medium, or High>\n" +
+    "PERFORMANCE_NOTE: <1-2 sentences, framed clearly as an AI estimate, not a guarantee, explaining the reasoning>\n" +
+    "BEFORE_EXCERPT: <a short excerpt, 1-3 sentences, from the original opening/intro as given or visible>\n" +
+    "AFTER_EXCERPT: <your rewritten, improved version of that same excerpt>\n" +
+    "ALT_TITLES:\n- <alternative title 1>\n- <alternative title 2>\n- <alternative title 3>\n" +
+    "ALT_HOOKS:\n- <alternative opening hook 1>\n- <alternative opening hook 2>\n" +
+    "PUBLISH_CHECKLIST:\n- <pre-publish checklist item>\n- <pre-publish checklist item>\n- <pre-publish checklist item>\n- <pre-publish checklist item>\n" +
+    "FURTHER_PROMPTS:\n- <a deeper follow-up prompt the creator could give an AI assistant to optimize further>\n- <another deeper follow-up prompt>\n- <another deeper follow-up prompt>";
+
+  function buildSynthesisSystem(){
+    return "You are the chief editor at a respected publication, synthesizing the findings of your specialist reviewers into one final, decisive editorial verdict for the creator. " +
+      briefLine() + " " + rigorLine() + "\n" +
+      "You will be given each specialist's score and summary. Weigh them holistically, resolve any disagreements with your own judgment, and produce one authoritative final report that helps the creator ship a stronger piece.\n\n" +
+      SYNTHESIS_FORMAT;
+  }
+
+  function buildSynthesisUserBlocks(){
+    var lines = [];
+    lines.push("Here are the specialist reviewer findings for this piece:\n");
+    state.stageOrder.forEach(function(key){
+      var r = state.stageResults[key];
+      if(!r) return;
+      lines.push("--- " + r.name + " (score: " + r.score + "/100) ---");
+      lines.push("Summary: " + r.summary);
+      lines.push("Strengths: " + r.strengths.join(' | '));
+      lines.push("Weaknesses: " + r.weaknesses.join(' | '));
+      lines.push("Opportunities: " + r.opportunities.join(' | '));
+      lines.push("Recommendations: " + r.recommendations.join(' | '));
+      lines.push("");
+    });
+    var blocks = [];
+    if(state.image){
+      blocks.push({ type: "image", source: { type: "base64", media_type: state.image.mediaType, data: state.image.base64 } });
+    }
+    if(state.textInput.trim().length > 30){
+      lines.push("Original article text:\n\"\"\"\n" + state.textInput.trim() + "\n\"\"\"");
+    } else {
+      lines.push("No separate article text was provided; rely on the screenshot for any excerpt work, and read what's visible in the image.");
+    }
+    lines.push("\nNow produce the final synthesis report, following the required format exactly.");
+    blocks.push({ type: "text", text: lines.join('\n') });
+    return blocks;
+  }
+
+  /* =========================================================
+     ROSTER RENDERING
+  ========================================================= */
+  var rosterEl = document.getElementById('roster');
+  function renderRoster(reviewers){
+    rosterEl.innerHTML = '';
+    reviewers.forEach(function(r){
+      var card = document.createElement('div');
+      card.className = 'roster-card';
+      card.id = 'roster-' + r.key;
+      card.innerHTML =
+        '<div class="roster-top"><span class="roster-name">'+escapeHtml(r.name)+'</span><span class="status-dot" id="dot-'+r.key+'"></span></div>' +
+        '<span class="roster-role">'+escapeHtml(r.role)+'</span>' +
+        '<span class="status-label" id="status-'+r.key+'">Queued</span>';
+      rosterEl.appendChild(card);
+    });
+    var chiefCard = document.createElement('div');
+    chiefCard.className = 'roster-card';
+    chiefCard.id = 'roster-chief';
+    chiefCard.innerHTML =
+      '<div class="roster-top"><span class="roster-name">Chief Editor</span><span class="status-dot" id="dot-chief"></span></div>' +
+      '<span class="roster-role">Final synthesis & report</span>' +
+      '<span class="status-label" id="status-chief">Queued</span>';
+    rosterEl.appendChild(chiefCard);
+  }
+  function setStatus(key, status){
+    var card = document.getElementById('roster-' + key);
+    var dot = document.getElementById('dot-' + key);
+    var label = document.getElementById('status-' + key);
+    if(!card) return;
+    card.classList.remove('running','done','error');
+    dot.classList.remove('running','done','error');
+    if(status !== 'queued'){ card.classList.add(status); dot.classList.add(status); }
+    label.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  /* =========================================================
+     RUN PIPELINE
+  ========================================================= */
+  runBtn.addEventListener('click', runPipeline);
+
+  async function runPipeline(){
+    if(state.running) return;
+    state.running = true;
+    runBtn.disabled = true;
+    validationMsg.textContent = 'Review in progress…';
+
+    document.getElementById('error-box').classList.add('hidden');
+    document.getElementById('results-root').classList.add('hidden');
+    document.getElementById('results-root').innerHTML = '';
+    logBox.innerHTML = '';
+
+    var workflowPanel = document.getElementById('workflow-panel');
+    workflowPanel.classList.remove('hidden');
+    workflowPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    state.stageResults = {};
+    state.stageOrder = [];
+    state.finalResult = null;
+
+    var reviewers = buildReviewers();
+    renderRoster(reviewers);
+    log('Assembling review desk: ' + reviewers.length + ' specialists assigned based on your brief.', 'info');
+    await sleep(300);
+
+    var anySuccess = false;
+
+    for(var i=0;i<reviewers.length;i++){
+      var r = reviewers[i];
+      setStatus(r.key, 'running');
+      log(r.name + ' is reviewing the submission…', 'info');
+      try{
+        var blocks = buildUserBlocksForReviewer();
+        var raw = await callClaude(r.system, blocks, 1200);
+        var fields = parseMarkers(raw);
+        var parsed = {
+          name: r.name,
+          score: fScore(fields, 'SCORE'),
+          summary: fText(fields, 'SUMMARY') || 'No summary returned.',
+          strengths: fList(fields, 'STRENGTHS'),
+          weaknesses: fList(fields, 'WEAKNESSES'),
+          opportunities: fList(fields, 'OPPORTUNITIES'),
+          recommendations: fList(fields, 'RECOMMENDATIONS')
+        };
+        state.stageResults[r.key] = parsed;
+        state.stageOrder.push(r.key);
+        setStatus(r.key, 'done');
+        log(r.name + ' finished — score ' + parsed.score + '/100.', 'ok');
+        anySuccess = true;
+      }catch(err){
+        setStatus(r.key, 'error');
+        log(r.name + ' failed: ' + err.message, 'err');
+      }
+      await sleep(150);
+    }
+
+    if(!anySuccess){
+      state.running = false;
+      showFatalError('Every specialist reviewer failed to respond. This is usually a temporary network or API issue. Please try running the review again.');
+      validateSubmission();
+      return;
+    }
+
+    setStatus('chief', 'running');
+    log('Chief Editor is synthesizing the final report…', 'info');
+    try{
+      var synthRaw = await callClaude(buildSynthesisSystem(), buildSynthesisUserBlocks(), 2000);
+      var sf = parseMarkers(synthRaw);
+      state.finalResult = {
+        overallScore: fScore(sf, 'OVERALL_SCORE'),
+        gradeLabel: fText(sf, 'GRADE_LABEL') || 'Reviewed',
+        execSummary: fText(sf, 'EXEC_SUMMARY'),
+        healthReport: fText(sf, 'HEALTH_REPORT'),
+        topImprovements: fList(sf, 'TOP_IMPROVEMENTS'),
+        performanceLevel: (fText(sf, 'PERFORMANCE_LEVEL') || 'Medium'),
+        performanceNote: fText(sf, 'PERFORMANCE_NOTE'),
+        beforeExcerpt: fText(sf, 'BEFORE_EXCERPT'),
+        afterExcerpt: fText(sf, 'AFTER_EXCERPT'),
+        altTitles: fList(sf, 'ALT_TITLES'),
+        altHooks: fList(sf, 'ALT_HOOKS'),
+        publishChecklist: fList(sf, 'PUBLISH_CHECKLIST'),
+        furtherPrompts: fList(sf, 'FURTHER_PROMPTS')
+      };
+      setStatus('chief', 'done');
+      log('Chief Editor finished — overall score ' + state.finalResult.overallScore + '/100.', 'ok');
+      renderResults(reviewers);
+    }catch(err){
+      setStatus('chief', 'error');
+      log('Chief Editor failed: ' + err.message, 'err');
+      showFatalError('The final synthesis step failed after several attempts (' + err.message + '). Your individual specialist reviews above succeeded — you can retry to attempt the final report again.');
+    }
+
+    state.running = false;
+    validateSubmission();
+  }
+
+  function showFatalError(msg){
+    var box = document.getElementById('error-box');
+    box.classList.remove('hidden');
+    box.innerHTML = '<strong>The review hit a snag.</strong><div style="margin-top:8px;">' + escapeHtml(msg) + '</div>' +
+      '<button class="btn btn-primary btn-sm" style="margin-top:14px;" id="retry-btn">Retry Review</button>';
+    document.getElementById('retry-btn').addEventListener('click', runPipeline);
+  }
+
+  /* =========================================================
+     GRADE MAPPING (presentation only, not analysis)
+  ========================================================= */
+  function scoreToGrade(score){
+    if(score >= 97) return 'A+';
+    if(score >= 93) return 'A';
+    if(score >= 90) return 'A-';
+    if(score >= 87) return 'B+';
+    if(score >= 83) return 'B';
+    if(score >= 80) return 'B-';
+    if(score >= 77) return 'C+';
+    if(score >= 73) return 'C';
+    if(score >= 70) return 'C-';
+    if(score >= 60) return 'D';
+    return 'F';
+  }
+
+  /* =========================================================
+     RESULTS RENDERING
+  ========================================================= */
+  function renderResults(reviewers){
+    var root = document.getElementById('results-root');
+    root.innerHTML = '';
+    var fr = state.finalResult;
+
+    /* --- Upload preview strip --- */
+    var previewSec = section('The Submission, At A Glance', '04 — PREVIEW');
+    var strip = document.createElement('div');
+    strip.className = 'preview-strip';
+    if(state.image){
+      var pi = document.createElement('div');
+      pi.className = 'preview-item';
+      pi.innerHTML = '<img src="'+state.image.dataUrl+'" alt="Uploaded preview" />' + '<span>' + escapeHtml(state.image.name || 'Uploaded image') + '</span>';
+      strip.appendChild(pi);
+    }
+    if(state.textInput.trim().length > 30){
+      var pt = document.createElement('div');
+      pt.className = 'preview-item';
+      pt.style.maxWidth = '420px';
+      pt.innerHTML = '<span>&#128221; ' + escapeHtml(state.textInput.trim().slice(0,140)) + (state.textInput.trim().length>140?'…':'') + '</span>';
+      strip.appendChild(pt);
+    }
+    previewSec.body.appendChild(strip);
+    root.appendChild(previewSec.el);
+
+    /* --- Score hero --- */
+    var scoreSec = section('The Verdict', '05 — OVERALL SCORE');
+    var hero = document.createElement('div');
+    hero.className = 'score-hero';
+    hero.innerHTML =
+      '<div class="stamp"><div class="grade">'+scoreToGrade(fr.overallScore)+'</div><div class="grade-sub">Editor\'s<br/>Verdict</div></div>' +
+      '<div class="score-meta">' +
+        '<div class="score-label">Overall Content Score</div>' +
+        '<div class="score-number font-display">'+fr.overallScore+'<span>/100</span></div>' +
+        '<div class="grade-label-text">'+escapeHtml(fr.gradeLabel)+'</div>' +
+      '</div>';
+    scoreSec.body.appendChild(hero);
+    root.appendChild(scoreSec.el);
+
+    /* --- Category breakdown --- */
+    var catSec = section('Category Breakdown', '06 — SCORES BY REVIEWER');
+    var catList = document.createElement('div');
+    catList.className = 'cat-list';
+    state.stageOrder.forEach(function(key){
+      var r = state.stageResults[key];
+      var row = document.createElement('div');
+      row.className = 'cat-row';
+      row.innerHTML =
+        '<div class="cat-top"><span class="cat-name">'+escapeHtml(r.name)+'</span><span class="cat-score">'+r.score+'/100</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" data-w="'+r.score+'"></div></div>';
+      catList.appendChild(row);
+    });
+    catSec.body.appendChild(catList);
+    root.appendChild(catSec.el);
+    requestAnimationFrame(function(){
+      setTimeout(function(){
+        catList.querySelectorAll('.bar-fill').forEach(function(el){ el.style.width = el.getAttribute('data-w') + '%'; });
+      }, 60);
+    });
+
+    /* --- Detailed reviewer cards --- */
+    var detailSec = section('Reviewer Notes', '07 — DETAILED AI REASONING');
+    state.stageOrder.forEach(function(key, idx){
+      var r = state.stageResults[key];
+      var card = document.createElement('details');
+      card.className = 'review-card';
+      if(idx === 0) card.open = true;
+      card.innerHTML =
+        '<summary><span>'+escapeHtml(r.name)+' &mdash; '+r.score+'/100</span><span class="chev">&#9656;</span></summary>' +
+        '<div class="body">' +
+          '<p class="summary-text">'+escapeHtml(r.summary)+'</p>' +
+          '<div class="subcols">' +
+            listCol('strengths','Strengths', r.strengths) +
+            listCol('weaknesses','Weaknesses', r.weaknesses) +
+            listCol('opportunities','Missed Opportunities', r.opportunities) +
+            listCol('recs','Recommendations', r.recommendations) +
+          '</div>' +
+        '</div>';
+      detailSec.body.appendChild(card);
+    });
+    root.appendChild(detailSec.el);
+
+    /* --- Executive summary + health --- */
+    var execSec = section('Executive Summary', '08 — FINAL REPORT');
+    execSec.body.innerHTML =
+      '<p style="font-size:15px;line-height:1.7;">'+escapeHtml(fr.execSummary)+'</p>' +
+      '<div class="field-label" style="margin-top:18px;">Content Health Report</div>' +
+      '<p style="font-size:14px;color:var(--ink-dim);line-height:1.7;margin-top:8px;">'+escapeHtml(fr.healthReport)+'</p>';
+    root.appendChild(execSec.el);
+
+    /* --- Top improvements + predicted performance --- */
+    var impactSec = section('Highest-Impact Improvements & Predicted Performance', '09 — PRIORITIES');
+    var grid = document.createElement('div');
+    grid.className = 'grid-2';
+    var left = document.createElement('div');
+    var ol = document.createElement('ol');
+    ol.style.paddingLeft = '20px';
+    ol.style.fontSize = '14.5px';
+    ol.style.lineHeight = '1.9';
+    fr.topImprovements.forEach(function(t){
+      var li = document.createElement('li');
+      li.textContent = t;
+      ol.appendChild(li);
+    });
+    left.appendChild(ol);
+    var right = document.createElement('div');
+    var lvl = (fr.performanceLevel || 'Medium').toLowerCase().replace(/[^a-z]/g,'');
+    if(['low','medium','high'].indexOf(lvl) === -1) lvl = 'medium';
+    right.innerHTML =
+      '<div class="perf-row"><span class="perf-badge '+lvl+'">'+escapeHtml(fr.performanceLevel)+' Potential</span></div>' +
+      '<p style="font-size:14px;color:var(--ink-dim);margin-top:12px;line-height:1.7;">'+escapeHtml(fr.performanceNote)+'</p>' +
+      '<p class="perf-disclaimer" style="margin-top:10px;">AI estimate based on this review only &mdash; not a guarantee of real-world results.</p>';
+    grid.appendChild(left);
+    grid.appendChild(right);
+    impactSec.body.appendChild(grid);
+    root.appendChild(impactSec.el);
+
+    /* --- Before / after --- */
+    if(fr.beforeExcerpt || fr.afterExcerpt){
+      var baSec = section('Before vs. After', '10 — REWRITE SAMPLE');
+      var baGrid = document.createElement('div');
+      baGrid.className = 'ba-grid';
+      baGrid.innerHTML =
+        '<div class="ba-box before"><span class="ba-label">Original</span>'+escapeHtml(fr.beforeExcerpt || '—')+'</div>' +
+        '<div class="ba-box after"><span class="ba-label">Rewritten</span>'+escapeHtml(fr.afterExcerpt || '—')+'</div>';
+      baSec.body.appendChild(baGrid);
+      root.appendChild(baSec.el);
+    }
+
+    /* --- Alt titles & hooks --- */
+    var altSec = section('Alternative Titles & Hooks', '11 — SWIPE FILE');
+    var altGrid = document.createElement('div');
+    altGrid.className = 'grid-2';
+    altGrid.appendChild(chipColumn('Alternative Titles', fr.altTitles));
+    altGrid.appendChild(chipColumn('Alternative Opening Hooks', fr.altHooks));
+    altSec.body.appendChild(altGrid);
+    root.appendChild(altSec.el);
+
+    /* --- Publishing checklist --- */
+    var checkSec = section('Publishing Checklist', '12 — BEFORE YOU HIT PUBLISH');
+    var checklist = document.createElement('div');
+    checklist.className = 'checklist';
+    fr.publishChecklist.forEach(function(item, idx){
+      var label = document.createElement('label');
+      label.className = 'check-item';
+      var cid = 'chk-' + idx;
+      label.innerHTML = '<input type="checkbox" id="'+cid+'" /><span class="txt">'+escapeHtml(item)+'</span>';
+      var input = label.querySelector('input');
+      input.addEventListener('change', function(){
+        label.classList.toggle('checked', input.checked);
+      });
+      checklist.appendChild(label);
+    });
+    checkSec.body.appendChild(checklist);
+    root.appendChild(checkSec.el);
+
+    /* --- Further prompts --- */
+    var promptSec = section('Go Deeper', '13 — FURTHER OPTIMIZATION PROMPTS');
+    var promptDesc = document.createElement('p');
+    promptDesc.className = 'panel-hint';
+    promptDesc.style.marginBottom = '14px';
+    promptDesc.textContent = 'Copy any of these into a follow-up conversation with an AI assistant to keep refining this piece.';
+    promptSec.body.appendChild(promptDesc);
+    promptSec.body.appendChild(chipColumn(null, fr.furtherPrompts).firstChild);
+    root.appendChild(promptSec.el);
+
+    root.classList.remove('hidden');
+    root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function section(title, num){
+    var el = document.createElement('section');
+    el.className = 'panel fade-in';
+    var head = document.createElement('div');
+    head.className = 'panel-head';
+    head.innerHTML = '<h2 class="panel-title font-display">'+escapeHtml(title)+'</h2><span class="panel-num">'+escapeHtml(num)+'</span>';
+    el.appendChild(head);
+    var body = document.createElement('div');
+    el.appendChild(body);
+    return { el: el, body: body };
+  }
+
+  function listCol(cls, title, items){
+    var lis = (items && items.length) ? items.map(function(i){ return '<li>'+escapeHtml(i)+'</li>'; }).join('') : '<li style="color:var(--ink-faint);">None noted</li>';
+    return '<div class="subcol '+cls+'"><h4>'+escapeHtml(title)+'</h4><ul>'+lis+'</ul></div>';
+  }
+
+  function chipColumn(title, items){
+    var wrap = document.createElement('div');
+    if(title){
+      var h = document.createElement('div');
+      h.className = 'field-label';
+      h.style.marginBottom = '10px';
+      h.textContent = title;
+      wrap.appendChild(h);
+    }
+    var list = document.createElement('div');
+    list.className = 'chip-list';
+    (items && items.length ? items : ['None generated']).forEach(function(text){
+      var chip = document.createElement('div');
+      chip.className = 'chip';
+      var span = document.createElement('span');
+      span.textContent = text;
+      var btn = document.createElement('button');
+      btn.className = 'chip-copy';
+      btn.textContent = 'Copy';
+      btn.addEventListener('click', function(){
+        copyToClipboard(text, btn);
+      });
+      chip.appendChild(span);
+      chip.appendChild(btn);
+      list.appendChild(chip);
+    });
+    wrap.appendChild(list);
+    return wrap;
+  }
+
+  function copyToClipboard(text, btn){
+    var done = function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(function(){ btn.textContent = old; }, 1400);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+  function fallbackCopy(text, cb){
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    cb();
+  }
+
+})();
+</script>
+</body>
+</html>
