@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Day 3 - Step 1: Install Node.js</title>
+<style>
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    max-width: 760px;
+    margin: 40px auto;
+    padding: 0 20px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    background: #fafafa;
+  }
+  h1 {
+    font-size: 26px;
+    border-bottom: 3px solid #2563eb;
+    padding-bottom: 10px;
+  }
+  h2 {
+    font-size: 20px;
+    color: #2563eb;
+    margin-top: 32px;
+  }
+  .badge {
+    display: inline-block;
+    background: #2563eb;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .explain {
+    background: #eef2ff;
+    border-left: 4px solid #6366f1;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 16px 0;
+  }
+  .why {
+    background: #fef9c3;
+    border-left: 4px solid #eab308;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 16px 0;
+  }
+  code, pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: Consolas, monospace;
+    border-radius: 6px;
+  }
+  code {
+    padding: 2px 6px;
+    font-size: 14px;
+  }
+  pre {
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 14px;
+  }
+  ol, ul {
+    padding-left: 22px;
+  }
+  li {
+    margin-bottom: 8px;
+  }
+  .step-box {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 18px 0;
+  }
+  .confirm {
+    background: #dcfce7;
+    border-left: 4px solid #16a34a;
+    padding: 14px 16px;
+    border-radius: 6px;
+    margin-top: 28px;
+    font-weight: 600;
+  }
+  .checklist {
+    margin-top: 10px;
+  }
+  .checklist label {
+    display: block;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<span class="badge">DAY 3 · FOUNDATION SETUP</span>
+<h1>Step 1: Install Node.js</h1>
+
+<div class="explain">
+<strong>What it is (plain English):</strong> Node.js is a program that lets your computer run JavaScript code outside of a web browser. Think of it as the "engine" that powers your development tools — you won't write raw Node code much, but nearly every tool we use (Expo, npm, React Native) depends on it being installed.
+</div>
+
+<div class="why">
+<strong>Why we need it for CircleUp:</strong> Expo CLI (which builds our mobile app), npm (Node's package manager — used to install libraries like React Navigation and Firebase), and most of our toolchain requires Node.js to run at all.
+</div>
+
+<h2>Instructions (Windows)</h2>
+
+<div class="step-box">
+<strong>1. Check if you already have it installed</strong>
+<ol>
+<li>Press <code>Windows key</code>, type <code>cmd</code>, press Enter to open Command Prompt.</li>
+<li>Type this and press Enter:
+<pre>node -v</pre>
+</li>
+<li>If you see a version number like <code>v20.11.0</code> — Node is already installed. Skip to the confirmation step at the bottom.</li>
+<li>If you see <code>'node' is not recognized...</code> — it's not installed. Continue below.</li>
+</ol>
+</div>
+
+<div class="step-box">
+<strong>2. Download Node.js</strong>
+<ul>
+<li>Go to: <a href="https://nodejs.org" target="_blank">https://nodejs.org</a></li>
+<li>Download the <strong>LTS version</strong> (left button, labeled "Recommended for Most Users"). LTS = Long Term Support — the stable, well-tested version, not the bleeding-edge one.</li>
+</ul>
+</div>
+
+<div class="step-box">
+<strong>3. Run the installer</strong>
+<ol>
+<li>Open the downloaded <code>.msi</code> file.</li>
+<li>Click "Next" through the wizard, accepting the license agreement.</li>
+<li>Leave all default options checked — including <strong>"Add to PATH"</strong>. This is important: it lets you run <code>node</code> from any terminal window.</li>
+<li>Click "Install," then "Finish."</li>
+</ol>
+</div>
+
+<div class="step-box">
+<strong>4. Verify installation</strong>
+<ol>
+<li>Close and reopen Command Prompt (required — it won't recognize the new install until restarted).</li>
+<li>Run:
+<pre>node -v
+npm -v</pre>
+</li>
+<li>You should see two version numbers, e.g. <code>v20.11.0</code> and <code>10.2.4</code>.</li>
+</ol>
+</div>
+
+<div class="confirm">
+📸 Please send a screenshot of your Command Prompt showing the output of <code>node -v</code> and <code>npm -v</code> before moving to Step 2 (installing Expo CLI).
+</div>
+
+</body>
+</html>
