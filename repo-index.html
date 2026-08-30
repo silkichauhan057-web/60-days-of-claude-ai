@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>60 Days of Claude AI — Repo Index</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12151c;
+    --surface: #1b212c;
+    --surface-2: #232a37;
+    --border: #2c3444;
+    --amber: #d9a441;
+    --text: #eef1f6;
+    --muted: #8b93a3;
+    --muted-2: #626a7a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 64px 28px 80px; }
+
+  .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--amber); letter-spacing: 0.02em; margin: 0 0 14px; }
+  h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(32px, 5vw, 48px); line-height: 1.08; margin: 0 0 18px; max-width: 15ch; }
+  .lede { font-size: 16px; color: var(--muted); max-width: 62ch; margin: 0 0 28px; }
+  .repo-link { display: inline-flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; font-size: 14px; border: 1px solid var(--border); padding: 9px 16px; border-radius: 8px; transition: border-color 0.15s ease; }
+  .repo-link:hover { border-color: var(--amber); }
+  .repo-link svg { width: 15px; height: 15px; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 40px 0 48px; }
+  .stat { background: var(--surface); padding: 20px 18px; }
+  .stat .num { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; color: var(--amber); line-height: 1; }
+  .stat .label { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .about { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px 26px; margin-bottom: 48px; }
+  .about h2 { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin: 0 0 10px; }
+  .about p { font-size: 14px; color: var(--muted); margin: 0 0 10px; max-width: 68ch; }
+  .about p:last-child { margin-bottom: 0; }
+  .about .name { color: var(--text); font-weight: 500; }
+
+  .section-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .section-sub { font-size: 13px; color: var(--muted-2); margin: 0 0 20px; }
+
+  .day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 44px; }
+  .day-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .day-card .day-num { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--amber); margin-bottom: 8px; }
+  .file-chip { display: block; font-size: 13px; color: var(--text); text-decoration: none; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .file-chip:last-child { border-bottom: none; }
+  .file-chip:hover { color: var(--amber); }
+  .file-chip .ext { color: var(--muted-2); font-family: 'IBM Plex Mono', monospace; font-size: 10px; margin-left: 6px; }
+
+  .extras { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .extra-chip { display: flex; justify-content: space-between; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; text-decoration: none; color: var(--text); font-size: 13px; }
+  .extra-chip:hover { border-color: var(--amber); }
+  .extra-chip .ext { color: var(--muted-2); font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex-shrink: 0; }
+
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted-2); }
+
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">GitHub · silkichauhan057-web/60-days-of-claude-ai</p>
+  <h1>60 Days of Claude AI</h1>
+  <p class="lede">A running archive of Silki Chauhan's AI learning challenge — prompt engineering exercises, applied builds, and documentation, one day at a time.</p>
+  <a class="repo-link" href="https://github.com/silkichauhan057-web/60-days-of-claude-ai" target="_blank" rel="noopener">
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+    View on GitHub
+  </a>
+
+  <div class="stats">
+    <div class="stat"><div class="num">61</div><div class="label">files tracked</div></div>
+    <div class="stat"><div class="num">~52</div><div class="label">days spanned</div></div>
+    <div class="stat"><div class="num">24</div><div class="label">interactive HTML builds</div></div>
+    <div class="stat"><div class="num">17</div><div class="label">PDF reports</div></div>
+  </div>
+
+  <div class="about">
+    <h2>About this repo</h2>
+    <p><span class="name">Silki Chauhan</span> — 3rd-year B.Tech Computer Science student, learning Java, Python, SQL, Power BI, and prompt engineering, working toward becoming an AI Engineer building real-world applications.</p>
+    <p>This repo documents that process day by day: reflection exercises, applied mini-projects, and full technical builds — including CircleUp, a React Native + Firebase social app built across Days 3–7.</p>
+  </div>
+
+  <div class="section-title">By day</div>
+  <p class="section-sub">Files with a recognizable day number, grouped and sorted.</p>
+  <div class="day-grid" id="dayGrid"></div>
+
+  <div class="section-title">Other files</div>
+  <p class="section-sub">Root-level docs, reports, and assets without a day number in the filename.</p>
+  <div class="extras" id="extraGrid"></div>
+
+  <footer>Generated from the live contents of the repo above. File links open the raw or rendered version on GitHub.</footer>
+</div>
+
+<script>
+const files = [
+"30-Day-AI-Learning-Schedule.pdf","AI_Engineer_Roadmap_SilkiChauhan.pdf","Brain_Dump_Merge_Mode.pdf",
+"DAY52_Technical_Blueprint.pdf","Day10_Capstone_Product_Discovery_Decisions.pdf","Day11_Documentation.pdf",
+"Day6_Complete_Package.pdf","Day9_Documentation.pdf","Day_35_Prompt_Puzzle.pdf","Day_36_Cognitive_Pattern_Explorer.pdf",
+"Day_38_Typing_Speed_Studio (2).pdf","Day_39_PDF_Splitter_and_Merger.html","Digital_Footprint_Dashboard.html",
+"Gemini_Generated_Image_7o9ogg7o9ogg7o9o.png","NutriScope (1).html","NutriScope.html","README.md",
+"Silki_Birth_Chart_Report.pdf","TCS_Quick_Take_Report.pdf","Task_Compass_Day_37_Retail_Business.html",
+"admission-readiness-simulator.html","autonomous-agent-studio.html","day 44.html","day-02-README.md",
+"day-42-personal-financial-command-center.html","day12.md","day13.md","day14.md","day17_vehicle_data.csv",
+"day19.pdf","day20.pdf","day22.pdf","day23.pdf","day24_Business_Strategy_Report.pdf","day3-step1-node-install.html",
+"day3.md","day30 (1).html","day31 (1).html","day32_marketing_strategist.pdf","day33_media_integrity_analyzer.pdf",
+"day34_marketing_detective.pdf","day4-milestone1-auth-context.html","day4.md","day40.html","day43.html","day45.html",
+"day47.html","day48 (1).html","day48.html","day5_circles_feature.pdf","day6_mvp_complete.pdf","day7.md","day8.md",
+"defend-your-experience.html","face_puzzle (1).html","image.png","index.html","interactive-learning-studio.html",
+"operation_lifeline.html","pa-story-simulator (1).html","shark_tank.html"
+];
+
+const REPO_BASE = "https://github.com/silkichauhan057-web/60-days-of-claude-ai/blob/main/";
+
+function extractDay(name) {
+  const m = name.match(/day[\s_-]?0*(\d{1,3})/i) || name.match(/DAY0*(\d{1,3})/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function ext(name) {
+  const parts = name.split(".");
+  return parts.length > 1 ? parts.pop().toUpperCase() : "";
+}
+
+function linkFor(name) {
+  return REPO_BASE + encodeURIComponent(name).replace(/%2F/g, "/");
+}
+
+const byDay = {};
+const extras = [];
+
+files.forEach(f => {
+  const d = extractDay(f);
+  if (d !== null) {
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(f);
+  } else {
+    extras.push(f);
+  }
+});
+
+const dayGrid = document.getElementById("dayGrid");
+Object.keys(byDay).map(Number).sort((a,b) => a-b).forEach(day => {
+  const card = document.createElement("div");
+  card.className = "day-card";
+  const label = document.createElement("div");
+  label.className = "day-num";
+  label.textContent = "DAY " + String(day).padStart(2, "0");
+  card.appendChild(label);
+  byDay[day].forEach(f => {
+    const a = document.createElement("a");
+    a.className = "file-chip";
+    a.href = linkFor(f);
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = f.replace(/\.(pdf|html|md|csv|png)$/i, "");
+    const span = document.createElement("span");
+    span.className = "ext";
+    span.textContent = ext(f);
+    a.appendChild(span);
+    card.appendChild(a);
+  });
+  dayGrid.appendChild(card);
+});
+
+const extraGrid = document.getElementById("extraGrid");
+extras.sort().forEach(f => {
+  const a = document.createElement("a");
+  a.className = "extra-chip";
+  a.href = linkFor(f);
+  a.target = "_blank";
+  a.rel = "noopener";
+  const nameSpan = document.createElement("span");
+  nameSpan.textContent = f.replace(/\.(pdf|html|md|csv|png)$/i, "");
+  const extSpan = document.createElement("span");
+  extSpan.className = "ext";
+  extSpan.textContent = ext(f);
+  a.appendChild(nameSpan);
+  a.appendChild(extSpan);
+  extraGrid.appendChild(a);
+});
+</script>
+</body>
+</html>
